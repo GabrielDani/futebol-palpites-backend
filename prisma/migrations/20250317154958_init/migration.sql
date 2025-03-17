@@ -1,8 +1,7 @@
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
+    "nickname" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -13,6 +12,9 @@ CREATE TABLE "User" (
 CREATE TABLE "Group" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "isPublic" BOOLEAN NOT NULL DEFAULT true,
+    "createdBy" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Group_pkey" PRIMARY KEY ("id")
 );
@@ -47,7 +49,7 @@ CREATE TABLE "_GroupToUser" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+CREATE UNIQUE INDEX "User_nickname_key" ON "User"("nickname");
 
 -- CreateIndex
 CREATE INDEX "_GroupToUser_B_index" ON "_GroupToUser"("B");
