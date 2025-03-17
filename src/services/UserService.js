@@ -1,5 +1,6 @@
 import prisma from "../repositories/prisma.js";
 import { hashPassword } from "../auth/password.js";
+import { userToDTO } from "../dtos/userDTO.js";
 
 class UserService {
   async createUser(nickname, password) {
@@ -10,29 +11,34 @@ class UserService {
 
     const hashedPassword = await hashPassword(password);
 
-    return prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         nickname,
         password: hashedPassword,
       },
     });
+
+    return userToDTO(user);
   }
 
   async findUserByNickname(nickname) {
-    return prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { nickname },
     });
+    return user ? userToDTO(user) : null;
   }
 
   async getAllUsers() {
-    return prisma.user.findMany();
+    const users = await prisma.user.findMany();
+    return users.map(userToDTO);
   }
 
   async updateUser(id, data) {
-    return prisma.user.update({
+    const user = prisma.user.update({
       where: { id },
       data,
     });
+    return userToDTO(user);
   }
 
   async deleteUser(id) {
