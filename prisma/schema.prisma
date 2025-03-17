@@ -12,9 +12,10 @@ model User {
   nickname  String @unique
   password  String
   createdAt DateTime @default(now())
-
-  groups    Group[]
-  guess     Guess[]
+  
+  groups    UserGroup[]
+  guesses   Guess[] 
+  createdGroups Group[]
 }
 
 model Group {
@@ -22,10 +23,24 @@ model Group {
   name      String
   isPublic  Boolean @default(true)
   createdBy String
+  creator   User   @relation(fields: [createdBy], references: [id]) // Relação unidirecional
   createdAt DateTime @default(now())
 
-  users User[]
+  @@unique([name, createdBy])
+
+  members UserGroup[]
 }
+
+model UserGroup {
+  userId  String
+  groupId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([userId, groupId]) // Define uma chave composta
+}
+
 
 model Match {
   id        String @id @default(uuid())
@@ -43,8 +58,8 @@ model Guess {
   scoreHome Int
   scoreAway Int
   
-  user      User @relation(fields: [userId], references: [id])
-  match     Match @relation(fields: [matchId], references: [id])
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match     Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
 }
 
 
