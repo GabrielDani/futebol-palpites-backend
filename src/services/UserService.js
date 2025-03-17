@@ -1,11 +1,19 @@
 import prisma from "../repositories/prisma.js";
+import { hashPassword } from "../auth/password.js";
 
 class UserService {
   async createUser(nickname, password) {
+    const existingUser = await prisma.user.findUnique({ where: { nickname } });
+    if (existingUser) {
+      throw new Error("Nickname já está em uso.");
+    }
+
+    const hashedPassword = await hashPassword(password);
+
     return prisma.user.create({
       data: {
         nickname,
-        password,
+        password: hashedPassword,
       },
     });
   }
@@ -16,7 +24,7 @@ class UserService {
     });
   }
 
-  async gettAllUsers() {
+  async getAllUsers() {
     return prisma.user.findMany();
   }
 

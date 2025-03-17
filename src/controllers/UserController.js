@@ -1,14 +1,22 @@
 import UserService from "../services/UserService.js";
+import { createUserSchema } from "../validations/userValidation.js";
 
 class UserController {
   async createUser(req, res) {
-    const { nickname, password } = req.body;
+    const validation = createUserSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return res.status(400).json({ error: validation.error.format() });
+    }
 
     try {
-      const user = await UserService.createUser(nickname, password);
-      res.status(201).send(user);
+      const user = await UserService.createUser(
+        req.body.nickname,
+        req.body.password
+      );
+      res.status(201).json(user);
     } catch (error) {
-      res.status(400).send({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   }
 
@@ -18,21 +26,21 @@ class UserController {
     try {
       const user = await UserService.findUserByNickname(nickname);
       if (user) {
-        res.status(200).send(user);
+        res.status(200).json(user);
       } else {
-        res.status(400).send({ error: "Usuário não encontrado " });
+        res.status(404).json({ error: "Usuário não encontrado " });
       }
     } catch (error) {
-      res.status(400).send({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   }
 
   async getAllUsers(req, res) {
     try {
-      const users = await UserService.gettAllUsers();
-      res.status(200).send(users);
+      const users = await UserService.getAllUsers();
+      res.status(200).json(users);
     } catch (error) {
-      res.status(400).send({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   }
 
@@ -46,9 +54,9 @@ class UserController {
         password,
       });
 
-      res.status(200).send(updateUser);
+      res.status(200).json(updateUser);
     } catch (error) {
-      res.status(400).send({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   }
 
@@ -57,9 +65,9 @@ class UserController {
 
     try {
       await UserService.deleteUser(id);
-      res.status(204).send();
+      res.status(204).json();
     } catch (error) {
-      res.status(400).send({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   }
 }
