@@ -42,14 +42,27 @@ model UserGroup {
   @@id([userId, groupId]) // Define uma chave composta
 }
 
+model Team {
+  id          String @id @default(uuid())
+  name        String @unique
+  shortName   String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+
+  homeMatches Match[] @relation("HomeTeam")
+  awayMatches Match[] @relation("AwayTeam")
+}
+
 
 model Match {
-  id        String @id @default(uuid())
-  externalId String @unique
-  homeTeam  String
-  awayTeam  String
-  matchDate DateTime
-  status    String
+  id            String @id @default(uuid())
+  homeTeamId    String
+  awayTeamId    String
+  matchDate     DateTime
+  status        String
+
+  homeTeam Team @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam Team @relation("AwayTeam", fields: [awayTeamId], references: [id])
 
   guesses   Guess[]
 }
