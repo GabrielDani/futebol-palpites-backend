@@ -29,6 +29,7 @@ model Group {
   @@unique([name, createdBy])
 
   members UserGroup[]
+  Guess Guess[]
 }
 
 model UserGroup {
@@ -44,9 +45,11 @@ model UserGroup {
 
 model Match {
   id        String @id @default(uuid())
+  externalId String @unique
   homeTeam  String
   awayTeam  String
-  date      DateTime
+  matchDate DateTime
+  status    String
 
   guesses   Guess[]
 }
@@ -54,12 +57,21 @@ model Match {
 model Guess {
   id        String @id @default(uuid())
   userId    String
+  groupId   String
   matchId   String
   scoreHome Int
   scoreAway Int
+  status    String
   
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  match     Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user      User @relation(fields: [userId], references: [id])
+  group     Group @relation(fields: [groupId], references: [id])
+  match     Match @relation(fields: [matchId], references: [id])
+
+  @@unique([userId, groupId, matchId])
+  
+  @@index([userId]) // Índice para buscar palpites por usuário
+  @@index([groupId]) // Índice para buscar palpites por grupo
+  @@index([matchId]) // Índice para buscar palpites por jogo
 }
 
 
