@@ -59,6 +59,7 @@ model Guess {
   userId    String
   groupId   String
   matchId   String
+  round     Int
   scoreHome Int
   scoreAway Int
   status    String
