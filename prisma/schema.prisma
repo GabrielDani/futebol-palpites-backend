@@ -11,11 +11,17 @@ model User {
   id        String @id @default(uuid())
   nickname  String @unique
   password  String
+  role      Role @default(USER)
   createdAt DateTime @default(now())
   
   groups    UserGroup[]
   guesses   Guess[] 
   createdGroups Group[]
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 model Group {
