@@ -1,8 +1,16 @@
 import prisma from "../repositories/prisma.js";
 
 class TeamService {
+  async getAllTeams() {
+    return prisma.team.findMany();
+  }
+
   async findById(id) {
     return prisma.team.findUnique({ where: { id } });
+  }
+
+  async findTeamByName(name) {
+    return prisma.team.findUnique({ where: { name } });
   }
 
   async createTeam(name, shortName, logoUrl) {
@@ -16,14 +24,6 @@ class TeamService {
       }
       throw error;
     }
-  }
-
-  async findTeamByName(name) {
-    return prisma.team.findUnique({ where: { name } });
-  }
-
-  async getAllTeams() {
-    return prisma.team.findMany();
   }
 
   async updateTeam(id, data) {

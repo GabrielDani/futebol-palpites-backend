@@ -37,7 +37,7 @@ class TeamController {
         res.status(404).json({ error: "Time não encontrado." });
       }
     } catch (error) {
-      res.status(500).json({ error: "Erro interno do servidor." });
+      res.status(500).json({ error: error.message });
     }
   }
 
@@ -46,13 +46,14 @@ class TeamController {
       const teams = await TeamService.getAllTeams();
       res.status(200).json(teams);
     } catch (error) {
-      res.status(500).json({ error: "Erro interno do servidor." });
+      res.status(500).json({ error: error.message });
     }
   }
 
   async updateTeam(req, res) {
     const { id } = req.params;
-    const validationId = idTeamSchema.safeParse(id);
+    const idNumber = Number(id);
+    const validationId = idTeamSchema.safeParse(idNumber);
     if (!validationId.success)
       return res.status(400).json({ error: validationId.error.format() });
 
@@ -63,30 +64,31 @@ class TeamController {
     const data = dataValidation.data;
 
     try {
-      const team = await TeamService.updateTeam(id, data);
+      const team = await TeamService.updateTeam(idNumber, data);
       res.status(200).json(team);
     } catch (error) {
       if (error.message === "Time não encontrado.") {
         return res.status(404).json({ error: error.message });
       }
-      return res.status(500).json({ error: "Erro interno do servidor." });
+      return res.status(500).json({ error: error.message });
     }
   }
 
   async deleteTeam(req, res) {
     const { id } = req.params;
-    const validateId = uuidSchema.safeParse(id);
+    const idNumber = Number(id);
+    const validateId = uuidSchema.safeParse(idNumber);
     if (!validateId.success)
       return res.status(400).json({ error: validateId.error.format() });
 
     try {
-      await TeamService.deleteTeam(id);
+      await TeamService.deleteTeam(idNumber);
       return res.status(204).json();
     } catch (error) {
       if (error.message === "Time não encontrado.") {
         return res.status(404).json({ error: error.message });
       }
-      return res.status(500).json({ error: "Erro interno do servidor." });
+      return res.status(500).json({ error: error.message });
     }
   }
 }
