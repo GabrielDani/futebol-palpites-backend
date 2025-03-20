@@ -15,7 +15,11 @@ class AuthService {
       throw new Error("Senha inválida.");
     }
 
-    return generateToken({ id: user.id, nickname: user.nickname });
+    return generateToken({
+      id: user.id,
+      nickname: user.nickname,
+      role: user.role,
+    });
   }
 }
 
