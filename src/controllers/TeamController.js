@@ -2,7 +2,7 @@ import TeamService from "../services/TeamService.js";
 import {
   createTeamSchema,
   updateTeamSchema,
-  uuidSchema,
+  idTeamSchema,
 } from "../validations/teamValidation.js";
 
 class TeamController {
@@ -46,13 +46,13 @@ class TeamController {
       const teams = await TeamService.getAllTeams();
       res.status(200).json(teams);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      res.status(500).json({ error: "Erro interno do servidor." });
     }
   }
 
   async updateTeam(req, res) {
     const { id } = req.params;
-    const validationId = uuidSchema.safeParse(id);
+    const validationId = idTeamSchema.safeParse(id);
     if (!validationId.success)
       return res.status(400).json({ error: validationId.error.format() });
 
@@ -66,7 +66,10 @@ class TeamController {
       const team = await TeamService.updateTeam(id, data);
       res.status(200).json(team);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      if (error.message === "Time não encontrado.") {
+        return res.status(404).json({ error: error.message });
+      }
+      return res.status(500).json({ error: "Erro interno do servidor." });
     }
   }
 
