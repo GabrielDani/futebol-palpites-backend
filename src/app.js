@@ -4,6 +4,7 @@ import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import groupRoutes from "./routes/groupRoutes.js";
 import teamRoutes from "./routes/teamRoutes.js";
+import errorMiddleware from "./middlewares/errorMiddleware.js";
 
 const app = express();
 app.use(cors());
@@ -13,5 +14,7 @@ app.use("/auth", authRoutes);
 app.use("/user", userRoutes);
 app.use("/groups", groupRoutes);
 app.use("/teams", teamRoutes);
+
+app.use(errorMiddleware);
 
 export default app;
