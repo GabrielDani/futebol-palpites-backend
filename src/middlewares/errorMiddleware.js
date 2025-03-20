@@ -1,5 +1,5 @@
 export default function errorMiddleware(err, req, res, next) {
-  console.err(err);
+  console.error(err);
 
   if (err.status) {
     return res.status(err.status).json({ error: err.message });

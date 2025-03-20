@@ -1,4 +1,5 @@
 import prisma from "../repositories/prisma.js";
+import { ConflictError, NotFoundError } from "../utils/customErrors.js";
 
 class TeamService {
   async getAllTeams() {
@@ -20,7 +21,7 @@ class TeamService {
       });
     } catch (error) {
       if (error.code === "P2002") {
-        throw new Error("Nome do time já existe.");
+        throw new ConflictError("Nome do time já existe.");
       }
       throw error;
     }
@@ -28,13 +29,13 @@ class TeamService {
 
   async updateTeam(id, data) {
     const team = await this.findById(id);
-    if (!team) throw new Error("Time não encontrado");
+    if (!team) throw new NotFoundError("Time não encontrado");
     return prisma.team.update({ where: { id }, data });
   }
 
   async deleteTeam(id) {
     const team = await this.findById(id);
-    if (!team) throw new Error("Time não encontrado.");
+    if (!team) throw new NotFoundError("Time não encontrado.");
     return prisma.team.delete({ where: { id } });
   }
 }

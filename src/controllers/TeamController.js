@@ -1,94 +1,105 @@
 import TeamService from "../services/TeamService.js";
+import { BadRequestError, NotFoundError } from "../utils/customErrors.js";
+import { formatZodError } from "../utils/validationUtils.js";
 import {
   createTeamSchema,
   updateTeamSchema,
   idTeamSchema,
+  nameTeamSchema,
 } from "../validations/teamValidation.js";
 
 class TeamController {
-  async createTeam(req, res) {
+  async getAllTeams(req, res, next) {
+    try {
+      const teams = await TeamService.getAllTeams();
+      return res.status(200).json(teams);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async findById(req, res, next) {
+    const { id } = req.params;
+    const idValidation = idTeamSchema.safeParse(Number(id));
+
+    if (!idValidation.success) {
+      return next(new BadRequestError(formatZodError(idValidation.error)));
+    }
+
+    try {
+      const team = await TeamService.findById(Number(id));
+      if (!team) return next(new NotFoundError("Time não encontrado."));
+
+      return res.status(200).json(team);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async findTeamByName(req, res, next) {
+    const { name } = req.query;
+
+    const validation = nameTeamSchema.safeParse(name);
+    if (!validation.success)
+      return next(new BadRequestError(formatZodError(validation.error)));
+
+    try {
+      const team = await TeamService.findTeamByName(name);
+      if (!team) next(new NotFoundError("Time não encontrado."));
+      return res.status(200).json(team);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async createTeam(req, res, next) {
     const { name, shortName, logoUrl } = req.body;
     const validation = createTeamSchema.safeParse(req.body);
 
     if (!validation.success)
-      return res.status(400).json({ error: validation.error.format() });
+      return next(new BadRequestError(formatZodError(validation.error)));
 
     try {
       const team = await TeamService.createTeam(name, shortName, logoUrl);
-      res.status(201).json(team);
+      return res.status(201).json(team);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      next(error);
     }
   }
 
-  async findTeamByName(req, res) {
-    const { name } = req.query;
-
-    if (!name) {
-      return res.status(400).json({ error: "Nome do time é obrigatório." });
-    }
-
-    try {
-      const team = await TeamService.findTeamByName(name);
-
-      if (team) {
-        res.status(200).json(team);
-      } else {
-        res.status(404).json({ error: "Time não encontrado." });
-      }
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async getAllTeams(req, res) {
-    try {
-      const teams = await TeamService.getAllTeams();
-      res.status(200).json(teams);
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async updateTeam(req, res) {
+  async updateTeam(req, res, next) {
     const { id } = req.params;
-    const idNumber = Number(id);
-    const validationId = idTeamSchema.safeParse(idNumber);
-    if (!validationId.success)
-      return res.status(400).json({ error: validationId.error.format() });
+
+    const idValidation = idTeamSchema.safeParse(Number(id));
+    if (!idValidation.success)
+      return next(new BadRequestError(formatZodError(idValidation.error)));
 
     const dataValidation = updateTeamSchema.safeParse(req.body);
     if (!dataValidation.success)
-      return res.status(400).json({ error: dataValidation.error.format() });
+      return next(new BadRequestError(formatZodError(dataValidation.error)));
 
     const data = dataValidation.data;
 
     try {
-      const team = await TeamService.updateTeam(idNumber, data);
-      res.status(200).json(team);
+      const team = await TeamService.updateTeam(Number(id), data);
+      return res.status(200).json(team);
     } catch (error) {
-      if (error.message === "Time não encontrado.") {
-        return res.status(404).json({ error: error.message });
-      }
-      return res.status(500).json({ error: error.message });
+      next(error);
     }
   }
 
-  async deleteTeam(req, res) {
+  async deleteTeam(req, res, next) {
     const { id } = req.params;
-    const idNumber = Number(id);
-    const validateId = uuidSchema.safeParse(idNumber);
-    if (!validateId.success)
-      return res.status(400).json({ error: validateId.error.format() });
+
+    const idValidation = idTeamSchema.safeParse(Number(id));
+    if (!idValidation.success)
+      return next(new BadRequestError(formatZodError(idValidation.error)));
 
     try {
-      await TeamService.deleteTeam(idNumber);
+      await TeamService.deleteTeam(Number(id));
       return res.status(204).json();
     } catch (error) {
-      if (error.message === "Time não encontrado.") {
-        return res.status(404).json({ error: error.message });
-      }
-      return res.status(500).json({ error: error.message });
+      next(error);
     }
   }
 }
