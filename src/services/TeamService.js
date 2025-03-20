@@ -1,22 +1,41 @@
 import prisma from "../repositories/prisma.js";
 
 class TeamService {
+  async findById(id) {
+    return prisma.team.findUnique({ where: { id } });
+  }
+
   async createTeam(name, shortName, logoUrl) {
-    const existingTeam = prisma.team.findUnique({ where: { name } });
+    try {
+      return await prisma.team.create({
+        data: { name, shortName, logoUrl },
+      });
+    } catch (error) {
+      if (error.code === "P2002") {
+        throw new Error("Nome do time já existe.");
+      }
+      throw error;
+    }
+  }
 
-    if (existingTeam) throw new Error("Nome do time já existe.");
-
-    return prisma.team.create({
-      data: {
-        name,
-        shortName,
-        logoUrl,
-      },
-    });
+  async findTeamByName(name) {
+    return prisma.team.findUnique({ where: { name } });
   }
 
   async getAllTeams() {
     return prisma.team.findMany();
+  }
+
+  async updateTeam(id, data) {
+    const team = await this.findById(id);
+    if (!team) throw new Error("Time não encontrado");
+    return prisma.team.update({ where: { id }, data });
+  }
+
+  async deleteTeam(id) {
+    const team = await this.findById(id);
+    if (!team) throw new Error("Time não encontrado.");
+    return prisma.team.delete({ where: { id } });
   }
 }
 
