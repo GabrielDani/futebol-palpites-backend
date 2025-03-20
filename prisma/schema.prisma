@@ -49,8 +49,8 @@ model UserGroup {
 }
 
 model Team {
-  id          String @id @default(uuid())
-  name        String @unique
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
   shortName   String?
   logoUrl     String?
   createdAt   DateTime @default(now())
@@ -62,8 +62,8 @@ model Team {
 
 model Match {
   id            String @id @default(uuid())
-  homeTeamId    String
-  awayTeamId    String
+  homeTeamId    Int
+  awayTeamId    Int
   matchDate     DateTime
   status        String
 
