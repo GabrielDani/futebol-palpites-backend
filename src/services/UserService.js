@@ -58,6 +58,12 @@ class UserService {
       where: { id },
     });
   }
+
+  async findUserByIdWithoutDTO(id) {
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundError("Usuário não encontrado.");
+    return user;
+  }
 }
 
 export default new UserService();

@@ -1,6 +1,6 @@
 import prisma from "../repositories/prisma.js";
 import { comparePassword } from "../auth/password.js";
-import { generateToken } from "../auth/jwt.js";
+import { generateAccessToken, generateRefreshToken } from "../auth/jwt.js";
 import { NotFoundError, UnauthorizedError } from "../utils/customErrors.js";
 
 class AuthService {
@@ -10,15 +10,12 @@ class AuthService {
     if (!user) throw new NotFoundError("Usuário não encontrado.");
 
     const isPasswordValid = await comparePassword(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedError("Senha inválida.");
-    }
+    if (!isPasswordValid) throw new UnauthorizedError("Senha inválida.");
 
-    return generateToken({
-      id: user.id,
-      nickname: user.nickname,
-      role: user.role,
-    });
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user.id);
+
+    return { accessToken, refreshToken };
   }
 }
 
