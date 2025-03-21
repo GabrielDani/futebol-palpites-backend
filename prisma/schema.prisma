@@ -65,12 +65,18 @@ model Match {
   homeTeamId    Int
   awayTeamId    Int
   matchDate     DateTime
-  status        String
+  status        MatchStatus
 
   homeTeam Team @relation("HomeTeam", fields: [homeTeamId], references: [id])
   awayTeam Team @relation("AwayTeam", fields: [awayTeamId], references: [id])
 
   guesses   Guess[]
+}
+
+enum MatchStatus {
+  PENDING
+  ONGOING
+  FINISHED
 }
 
 model Guess {
