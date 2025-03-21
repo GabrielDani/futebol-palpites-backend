@@ -11,7 +11,8 @@ class UserService {
 
   async findUserById(id) {
     const user = await prisma.user.findUnique({ where: { id } });
-    return user ? userToDTO(user) : null;
+    if (!user) throw new NotFoundError("Usuário não encontrado.");
+    return userToDTO(user);
   }
 
   async findUserByNickname(nickname) {
@@ -38,18 +39,19 @@ class UserService {
   }
 
   async updateUser(id, data) {
-    const user = await this.findUserById(id);
+    const user = await prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundError("Usuário não encontrado.");
 
-    const updateUser = prisma.user.update({
+    const updateUser = await prisma.user.update({
       where: { id },
       data,
     });
+
     return userToDTO(updateUser);
   }
 
   async deleteUser(id) {
-    const user = await this.findUserById(id);
+    const user = await prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundError("Usuário não encontrado.");
 
     return prisma.user.delete({
