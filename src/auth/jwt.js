@@ -11,7 +11,6 @@ export function generateAccessToken(user) {
   return jwt.sign(
     {
       id: user.id,
-      nickname: user.nickname,
       role: user.role,
     },
     SECRET,

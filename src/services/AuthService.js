@@ -1,6 +1,10 @@
 import prisma from "../repositories/prisma.js";
 import { comparePassword } from "../auth/password.js";
-import { generateAccessToken, generateRefreshToken } from "../auth/jwt.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyToken,
+} from "../auth/jwt.js";
 import { NotFoundError, UnauthorizedError } from "../utils/customErrors.js";
 
 class AuthService {
@@ -16,6 +20,24 @@ class AuthService {
     const refreshToken = generateRefreshToken(user.id);
 
     return { accessToken, refreshToken };
+  }
+
+  async logout(refreshToken) {
+    try {
+      const decoded = verifyToken(refreshToken);
+
+      const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+      if (!user) throw new NotFoundError("Usuário não encontrado.");
+
+      await prisma.revokedToken.create({ data: { token: refreshToken } });
+    } catch (error) {
+      throw new UnauthorizedError("Refresh token inválido ou expirado.");
+    }
+  }
+
+  async isTokenRevoked(token) {
+    const revoked = await prisma.revokedToken.findUnique({ where: { token } });
+    return !!revoked;
   }
 }
 
