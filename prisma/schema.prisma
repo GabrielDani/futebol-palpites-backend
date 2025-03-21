@@ -66,6 +66,7 @@ model Match {
   awayTeamId    Int
   matchDate     DateTime
   status        MatchStatus
+  round         Int
 
   homeTeam Team @relation("HomeTeam", fields: [homeTeamId], references: [id])
   awayTeam Team @relation("AwayTeam", fields: [awayTeamId], references: [id])
