@@ -1,5 +1,9 @@
 import UserService from "../services/UserService.js";
-import { BadRequestError, NotFoundError } from "../utils/customErrors.js";
+import {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} from "../utils/customErrors.js";
 import {
   createUserSchema,
   nicknameUserSchema,
@@ -7,6 +11,7 @@ import {
   uuidUserSchema,
 } from "../validations/userValidation.js";
 import { formatZodError } from "../utils/validationUtils.js";
+import { hashPassword } from "../auth/password.js";
 
 class UserController {
   async getAllUsers(req, res, next) {
@@ -27,7 +32,7 @@ class UserController {
 
     try {
       const user = await UserService.findUserById(id);
-      return res.status(200).json(user);
+      res.status(200).json(user);
     } catch (error) {
       next(error);
     }
@@ -42,9 +47,9 @@ class UserController {
 
     try {
       const user = await UserService.findUserByNickname(nickname);
-      if (!user) return next(new NotFoundError("Usuário não encontrado."));
+      if (!user) return next(new NotFoundError("Usuário não encontrado"));
 
-      return res.status(200).json(user);
+      res.status(200).json(user);
     } catch (error) {
       next(error);
     }
@@ -71,16 +76,23 @@ class UserController {
     if (!idValidation.success)
       return next(new BadRequestError(formatZodError(idValidation.error)));
 
-    const { nickname, password } = req.body;
     const validation = updateUserSchema.safeParse(req.body);
     if (!validation.success)
       return next(new BadRequestError(formatZodError(validation.error)));
 
     try {
-      const updateUser = await UserService.updateUser(id, {
-        nickname,
-        password,
-      });
+      const userIdFromToken = req.user.id;
+      const userRole = req.user.role;
+
+      if (userIdFromToken !== id && userRole !== "ADMIN")
+        return next(
+          new ForbiddenError("Você não tem permissão para esta ação")
+        );
+
+      const data = req.body;
+
+      if (data.password) data.password = await hashPassword(data.password);
+      const updateUser = await UserService.updateUser(id, data);
 
       res.status(200).json(updateUser);
     } catch (error) {
@@ -96,8 +108,15 @@ class UserController {
       return next(new BadRequestError(formatZodError(idValidation.error)));
 
     try {
+      const userIdFromToken = req.user.id;
+      const userRole = req.user.role;
+
+      if (userIdFromToken !== id && userRole !== "ADMIN")
+        return next(
+          new ForbiddenError("Você não tem permissão para esta ação")
+        );
       await UserService.deleteUser(id);
-      res.status(204).json();
+      res.status(204).send();
     } catch (error) {
       next(error);
     }
