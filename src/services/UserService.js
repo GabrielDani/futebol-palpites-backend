@@ -38,11 +38,14 @@ class UserService {
   }
 
   async updateUser(id, data) {
-    const user = prisma.user.update({
+    const user = await this.findUserById(id);
+    if (!user) throw new NotFoundError("Usuário não encontrado.");
+
+    const updateUser = prisma.user.update({
       where: { id },
       data,
     });
-    return userToDTO(user);
+    return userToDTO(updateUser);
   }
 
   async deleteUser(id) {
