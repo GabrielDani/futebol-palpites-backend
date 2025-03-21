@@ -1,11 +1,12 @@
 import { verifyToken } from "../auth/jwt.js";
 import jwt from "jsonwebtoken";
+import { ForbiddenError, UnauthorizedError } from "../utils/customErrors.js";
 
 export function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];
 
   if (!token) {
-    return res.status(401).json({ error: "Token não fornecido." });
+    return next(new UnauthorizedError("Token inválido"));
   }
 
   try {
@@ -13,17 +14,17 @@ export function authMiddleware(req, res, next) {
     next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      return res
-        .status(403)
-        .json({ error: "Token expirado, faça login novamente. " });
+      return next(
+        new UnauthorizedError("Token expirado. Faça o login novamente.")
+      );
     }
-    return res.status(403).json({ error: "Token inválido." });
+    return next(new UnauthorizedError("Token inválido."));
   }
 }
 
 export function adminMiddleware(req, res, next) {
   if (req.user.role !== "ADMIN") {
-    return res.status(403).json({ error: "Acesso proibido. " });
+    return next(new ForbiddenError("Acesso proibido."));
   }
   next();
 }

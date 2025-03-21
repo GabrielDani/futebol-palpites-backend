@@ -6,7 +6,8 @@ const router = Router();
 
 router.post("/", UserController.createUser);
 router.get("/", authMiddleware, UserController.getAllUsers);
-router.get("/:nickname", UserController.getUserByNickname);
+router.get("/id/:id", UserController.findUserById);
+router.get("/nickname/:nickname", UserController.findUserByNickname);
 router.put("/:id", UserController.updateUser);
 router.delete("/:id", UserController.deleteUser);
 

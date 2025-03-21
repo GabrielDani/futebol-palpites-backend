@@ -1,52 +1,80 @@
 import UserService from "../services/UserService.js";
-import { createUserSchema } from "../validations/userValidation.js";
+import { BadRequestError, NotFoundError } from "../utils/customErrors.js";
+import {
+  createUserSchema,
+  nicknameUserSchema,
+  updateUserSchema,
+  uuidUserSchema,
+} from "../validations/userValidation.js";
+import { formatZodError } from "../utils/validationUtils.js";
 
 class UserController {
-  async createUser(req, res) {
-    const validation = createUserSchema.safeParse(req.body);
-
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.format() });
-    }
-
-    try {
-      const user = await UserService.createUser(
-        req.body.nickname,
-        req.body.password
-      );
-      res.status(201).json(user);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  }
-
-  async getUserByNickname(req, res) {
-    const { nickname } = req.params;
-
-    try {
-      const user = await UserService.findUserByNickname(nickname);
-      if (user) {
-        res.status(200).json(user);
-      } else {
-        res.status(404).json({ error: "Usuário não encontrado " });
-      }
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  }
-
-  async getAllUsers(req, res) {
+  async getAllUsers(req, res, next) {
     try {
       const users = await UserService.getAllUsers();
       res.status(200).json(users);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      next(error);
     }
   }
 
-  async updateUser(req, res) {
+  async findUserById(req, res, next) {
     const { id } = req.params;
+
+    const idValidation = uuidUserSchema.safeParse(id);
+    if (!idValidation.success)
+      return next(new BadRequestError(formatZodError(idValidation.error)));
+
+    try {
+      const user = await UserService.findUserById(id);
+      return res.status(200).json(user);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async findUserByNickname(req, res, next) {
+    const { nickname } = req.params;
+
+    const validation = nicknameUserSchema.safeParse(nickname);
+    if (!validation.success)
+      return next(new BadRequestError(formatZodError(validation.error)));
+
+    try {
+      const user = await UserService.findUserByNickname(nickname);
+      if (!user) return next(new NotFoundError("Usuário não encontrado."));
+
+      return res.status(200).json(user);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async createUser(req, res, next) {
     const { nickname, password } = req.body;
+    const validation = createUserSchema.safeParse(req.body);
+
+    if (!validation.success)
+      return next(new BadRequestError(formatZodError(validation.error)));
+
+    try {
+      const user = await UserService.createUser(nickname, password);
+      res.status(201).json(user);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateUser(req, res, next) {
+    const { id } = req.params;
+    const idValidation = uuidUserSchema.safeParse(id);
+    if (!idValidation.success)
+      return next(new BadRequestError(formatZodError(idValidation.error)));
+
+    const { nickname, password } = req.body;
+    const validation = updateUserSchema.safeParse(req.body);
+    if (!validation.success)
+      return next(new BadRequestError(formatZodError(validation.error)));
 
     try {
       const updateUser = await UserService.updateUser(id, {
@@ -56,18 +84,22 @@ class UserController {
 
       res.status(200).json(updateUser);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      next(error);
     }
   }
 
-  async deleteUser(req, res) {
+  async deleteUser(req, res, next) {
     const { id } = req.params;
+
+    const idValidation = uuidUserSchema.safeParse(id);
+    if (!idValidation.success)
+      return next(new BadRequestError(formatZodError(idValidation.error)));
 
     try {
       await UserService.deleteUser(id);
       res.status(204).json();
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      next(error);
     }
   }
 }
