@@ -1,9 +1,12 @@
 export default function errorMiddleware(err, req, res, next) {
   console.error(err);
 
-  if (err.status) {
-    return res.status(err.status).json({ error: err.message });
+  const statusCode = err.status || 500;
+  const response = { error: err.message };
+
+  if (process.env.NODE_ENV === "development") {
+    response.stack = err.stack;
   }
 
-  return res.status(500).json({ error: "Erro interno do servidor. " });
+  res.status(statusCode).json(response);
 }
