@@ -31,8 +31,7 @@ class MatchService {
       },
     });
 
-    if (matches.length === 0)
-      throw new NotFoundError("Partida não encontrada.");
+    if (matches.length === 0) return [];
 
     return matches.map(matchToDTO);
   };
