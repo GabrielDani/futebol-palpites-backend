@@ -29,13 +29,12 @@ model Group {
   name      String
   isPublic  Boolean @default(true)
   createdBy String
-  creator   User   @relation(fields: [createdBy], references: [id]) // Relação unidirecional
   createdAt DateTime @default(now())
 
   @@unique([name, createdBy])
 
+  creator   User   @relation(fields: [createdBy], references: [id]) // Relação unidirecional
   members UserGroup[]
-  Guess Guess[]
 }
 
 model UserGroup {
@@ -81,24 +80,15 @@ enum MatchStatus {
 }
 
 model Guess {
-  id        String @id @default(uuid())
   userId    String
-  groupId   String
   matchId   String
-  round     Int
   scoreHome Int
   scoreAway Int
-  status    String
   
   user      User @relation(fields: [userId], references: [id])
-  group     Group @relation(fields: [groupId], references: [id])
   match     Match @relation(fields: [matchId], references: [id])
 
-  @@unique([userId, groupId, matchId])
-  
-  @@index([userId]) // Índice para buscar palpites por usuário
-  @@index([groupId]) // Índice para buscar palpites por grupo
-  @@index([matchId]) // Índice para buscar palpites por jogo
+  @@id([userId, matchId])
 }
 
 model RevokedToken {
