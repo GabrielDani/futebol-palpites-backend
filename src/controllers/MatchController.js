@@ -1,6 +1,5 @@
 import MatchService from "../services/MatchService.js";
-import { BadRequestError, NotFoundError } from "../utils/customErrors.js";
-import { formatZodError } from "../utils/validationUtils.js";
+import { checkSchema } from "../utils/validationUtils.js";
 import {
   createMatchSchema,
   updateMatchSchema,
@@ -19,10 +18,8 @@ class MatchController {
   };
 
   findMatchById = async (req, res, next) => {
-    const { id } = req.params;
-
     try {
-      this.#checkSchema(id, uuidMatchSchema);
+      const id = checkSchema(req.params.id, uuidMatchSchema);
       const match = await MatchService.findMatchById(id);
       res.status(200).json(match);
     } catch (error) {
@@ -31,11 +28,9 @@ class MatchController {
   };
 
   findMatchByTeamId = async (req, res, next) => {
-    const { teamId } = req.params;
-
     try {
-      this.#checkSchema(Number(teamId), idTeamSchema);
-      const matches = await MatchService.findMatchByTeamId(Number(teamId));
+      const teamId = checkSchema(Number(req.params.teamId), idTeamSchema);
+      const matches = await MatchService.findMatchByTeamId(teamId);
       res.status(200).json(matches);
     } catch (error) {
       next(error);
@@ -44,7 +39,7 @@ class MatchController {
 
   createMatch = async (req, res, next) => {
     try {
-      const data = this.#checkSchema(req.body, createMatchSchema);
+      const data = checkSchema(req.body, createMatchSchema);
       const match = await MatchService.createMatch(data);
       res.status(201).json(match);
     } catch (error) {
@@ -53,11 +48,9 @@ class MatchController {
   };
 
   updateMatch = async (req, res, next) => {
-    const { id } = req.params;
-
     try {
-      this.#checkSchema(id, uuidMatchSchema);
-      const newData = this.#checkSchema(req.body, updateMatchSchema);
+      const id = checkSchema(req.params.id, uuidMatchSchema);
+      const newData = checkSchema(req.body, updateMatchSchema);
       const match = await MatchService.updateMatch(id, newData);
       res.status(200).json(match);
     } catch (error) {
@@ -66,22 +59,13 @@ class MatchController {
   };
 
   deleteMatch = async (req, res, next) => {
-    const { id } = req.params;
-
     try {
-      this.#checkSchema(id, uuidMatchSchema);
+      const id = checkSchema(req.params.id, uuidMatchSchema);
       await MatchService.deleteMatch(id);
       res.status(204).send();
     } catch (error) {
       next(error);
     }
-  };
-
-  #checkSchema = (data, schema) => {
-    const validation = schema.safeParse(data);
-    if (!validation.success)
-      throw new BadRequestError(formatZodError(validation.error));
-    return validation.data;
   };
 }
 

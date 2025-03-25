@@ -1,6 +1,5 @@
 import TeamService from "../services/TeamService.js";
-import { BadRequestError, NotFoundError } from "../utils/customErrors.js";
-import { formatZodError } from "../utils/validationUtils.js";
+import { checkSchema } from "../utils/validationUtils.js";
 import {
   createTeamSchema,
   updateTeamSchema,
@@ -19,17 +18,9 @@ class TeamController {
   }
 
   async findById(req, res, next) {
-    const { id } = req.params;
-    const idValidation = idTeamSchema.safeParse(Number(id));
-
-    if (!idValidation.success) {
-      return next(new BadRequestError(formatZodError(idValidation.error)));
-    }
-
     try {
-      const team = await TeamService.findById(Number(id));
-      if (!team) return next(new NotFoundError("Time não encontrado."));
-
+      const id = checkSchema(Number(req.params.id), idTeamSchema);
+      const team = await TeamService.findById(id);
       return res.status(200).json(team);
     } catch (error) {
       next(error);
@@ -37,15 +28,9 @@ class TeamController {
   }
 
   async findTeamByName(req, res, next) {
-    const { name } = req.query;
-
-    const validation = nameTeamSchema.safeParse(name);
-    if (!validation.success)
-      return next(new BadRequestError(formatZodError(validation.error)));
-
     try {
+      const name = checkSchema(req.query.name, nameTeamSchema);
       const team = await TeamService.findTeamByName(name);
-      if (!team) next(new NotFoundError("Time não encontrado."));
       return res.status(200).json(team);
     } catch (error) {
       next(error);
@@ -53,14 +38,9 @@ class TeamController {
   }
 
   async createTeam(req, res, next) {
-    const { name, shortName, logoUrl } = req.body;
-    const validation = createTeamSchema.safeParse(req.body);
-
-    if (!validation.success)
-      return next(new BadRequestError(formatZodError(validation.error)));
-
     try {
-      const team = await TeamService.createTeam(name, shortName, logoUrl);
+      const data = checkSchema(req.body, createTeamSchema);
+      const team = await TeamService.createTeam(data);
       return res.status(201).json(team);
     } catch (error) {
       next(error);
@@ -68,20 +48,10 @@ class TeamController {
   }
 
   async updateTeam(req, res, next) {
-    const { id } = req.params;
-
-    const idValidation = idTeamSchema.safeParse(Number(id));
-    if (!idValidation.success)
-      return next(new BadRequestError(formatZodError(idValidation.error)));
-
-    const dataValidation = updateTeamSchema.safeParse(req.body);
-    if (!dataValidation.success)
-      return next(new BadRequestError(formatZodError(dataValidation.error)));
-
-    const data = dataValidation.data;
-
     try {
-      const team = await TeamService.updateTeam(Number(id), data);
+      const id = checkSchema(Number(req.params.id), idTeamSchema);
+      const data = checkSchema(req.body, updateTeamSchema);
+      const team = await TeamService.updateTeam(id, data);
       return res.status(200).json(team);
     } catch (error) {
       next(error);
@@ -89,14 +59,9 @@ class TeamController {
   }
 
   async deleteTeam(req, res, next) {
-    const { id } = req.params;
-
-    const idValidation = idTeamSchema.safeParse(Number(id));
-    if (!idValidation.success)
-      return next(new BadRequestError(formatZodError(idValidation.error)));
-
     try {
-      await TeamService.deleteTeam(Number(id));
+      const id = checkSchema(Number(req.params.id), idTeamSchema);
+      await TeamService.deleteTeam(id);
       return res.status(204).json();
     } catch (error) {
       next(error);

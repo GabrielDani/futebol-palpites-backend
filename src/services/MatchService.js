@@ -1,6 +1,10 @@
 import { matchToDTO } from "../dtos/matchDTO.js";
 import prisma from "../repositories/prisma.js";
-import { BadRequestError, NotFoundError } from "../utils/customErrors.js";
+import {
+  BadRequestError,
+  ConflictError,
+  NotFoundError,
+} from "../utils/customErrors.js";
 
 class MatchService {
   getAllMatches = async () => {
@@ -38,8 +42,7 @@ class MatchService {
 
   createMatch = async (data) => {
     await this.#validateTeamsForMatch(data);
-    console.log(data);
-    return prisma.match.create({ data });
+    return await prisma.match.create({ data });
   };
 
   updateMatch = async (id, newData) => {
@@ -48,12 +51,12 @@ class MatchService {
     const updatedData = { ...match, ...newData };
     await this.#validateTeamsForMatch(updatedData);
 
-    return prisma.match.update({ where: { id }, data: newData });
+    return await prisma.match.update({ where: { id }, data: newData });
   };
 
   deleteMatch = async (id) => {
     await this.#findMatchOrFail(id);
-    return prisma.match.delete({ where: { id } });
+    return await prisma.match.delete({ where: { id } });
   };
 
   #findMatchOrFail = async (id) => {
@@ -95,7 +98,7 @@ class MatchService {
     });
 
     if (existingMatch) {
-      throw new BadRequestError(
+      throw new ConflictError(
         "Algum desses times já tem uma partida cadastrada nesta rodada."
       );
     }

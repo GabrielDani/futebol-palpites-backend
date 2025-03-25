@@ -1,43 +1,51 @@
 import prisma from "../repositories/prisma.js";
-import { ConflictError, NotFoundError } from "../utils/customErrors.js";
+import {
+  ConflictError,
+  InternalServerError,
+  NotFoundError,
+} from "../utils/customErrors.js";
 
 class TeamService {
-  async getAllTeams() {
-    return prisma.team.findMany();
-  }
+  getAllTeams = async () => {
+    return await prisma.team.findMany({ orderBy: { id: "asc" } });
+  };
 
-  async findById(id) {
-    return prisma.team.findUnique({ where: { id } });
-  }
+  findById = async (id) => {
+    return await this.#findTeamOrFail({ id });
+  };
 
-  async findTeamByName(name) {
-    return prisma.team.findUnique({ where: { name } });
-  }
+  findTeamByName = async (name) => {
+    return await this.#findTeamOrFail({ name });
+  };
 
-  async createTeam(name, shortName, logoUrl) {
+  createTeam = async (data) => {
     try {
       return await prisma.team.create({
-        data: { name, shortName, logoUrl },
+        data,
       });
     } catch (error) {
       if (error.code === "P2002") {
         throw new ConflictError("Nome do time já existe.");
       }
-      throw error;
+      throw new InternalServerError("Erro ao criar time.");
     }
-  }
+  };
 
-  async updateTeam(id, data) {
-    const team = await this.findById(id);
-    if (!team) throw new NotFoundError("Time não encontrado");
-    return prisma.team.update({ where: { id }, data });
-  }
+  updateTeam = async (id, data) => {
+    await this.#findTeamOrFail({ id });
+    return await prisma.team.update({ where: { id }, data });
+  };
 
-  async deleteTeam(id) {
-    const team = await this.findById(id);
+  deleteTeam = async (id) => {
+    await this.#findTeamOrFail({ id });
+    return await prisma.team.delete({ where: { id } });
+  };
+
+  #findTeamOrFail = async (whereClause) => {
+    const team = await prisma.team.findUnique({ where: whereClause });
     if (!team) throw new NotFoundError("Time não encontrado.");
-    return prisma.team.delete({ where: { id } });
-  }
+    return team;
+  };
 }
 
 export default new TeamService();

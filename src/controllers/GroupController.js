@@ -1,86 +1,60 @@
 import GroupService from "../services/GroupService.js";
+import { checkSchema } from "../utils/validationUtils.js";
 import {
   createGroupSchema,
   groupIdSchema,
 } from "../validations/groupValidation.js";
 
 class GroupController {
-  async createGroup(req, res) {
-    const { name, isPublic } = req.body;
-    const userId = req.user.id;
-
-    const validation = createGroupSchema.safeParse({ name, isPublic });
-
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.format() });
-    }
-
+  createGroup = async (req, res, next) => {
     try {
-      const group = await GroupService.createGroup(name, isPublic, userId);
+      const { name, isPublic } = checkSchema(req.body, createGroupSchema);
+      const group = await GroupService.createGroup(name, isPublic, req.user.id);
       res.status(201).json(group);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      next(error);
     }
-  }
+  };
 
-  async getAllGroups(req, res) {
+  getAllGroups = async (req, res, next) => {
     const userId = req.user.id;
-
     try {
       const groups = await GroupService.getAllGroups(userId);
       res.status(200).json(groups);
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      next(error);
     }
-  }
+  };
 
-  async joinGroup(req, res) {
-    const { groupId } = req.params;
-    const userId = req.user.id;
-
-    const validation = groupIdSchema.safeParse(groupId);
-    if (!validation.success)
-      return res.status(400).json({ error: validation.error.format() });
-
+  joinGroup = async (req, res, next) => {
     try {
-      await GroupService.joinGroup(groupId, userId);
+      const groupId = checkSchema(req.params.groupId, groupIdSchema);
+      await GroupService.joinGroup(groupId, req.user.id);
       res.status(200).json({ message: "Entrou no grupo com sucesso." });
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      next(error);
     }
-  }
+  };
 
-  async leaveGroup(req, res) {
-    const { groupId } = req.params;
-    const userId = req.user.id;
-
-    const validation = groupIdSchema.safeParse(groupId);
-    if (!validation.success)
-      return res.status(400).json({ error: validation.error.format() });
-
+  leaveGroup = async (req, res, next) => {
     try {
-      await GroupService.leaveGroup(groupId, userId);
+      const groupId = checkSchema(req.params.groupId, groupIdSchema);
+      await GroupService.leaveGroup(groupId, req.user.id);
       res.status(200).json({ message: "Saiu do grupo com sucesso. " });
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      next(error);
     }
-  }
+  };
 
-  async deleteGroup(req, res) {
-    const { groupId } = req.params;
-    const userId = req.user.id;
-
-    const validation = groupIdSchema.safeParse(groupId);
-    if (!validation.success)
-      return res.status(400).json({ error: validation.error.format() });
-
+  deleteGroup = async (req, res, next) => {
     try {
-      await GroupService.deleteGroup(groupId, userId);
+      const groupId = checkSchema(req.params.groupId, groupIdSchema);
+      await GroupService.deleteGroup(groupId, req.user.id);
       res.status(204).send();
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      next(error);
     }
-  }
+  };
 }
 
 export default new GroupController();
