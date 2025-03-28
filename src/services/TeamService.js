@@ -1,51 +1,56 @@
 import prisma from "../repositories/prisma.js";
-import {
-  ConflictError,
-  InternalServerError,
-  NotFoundError,
-} from "../utils/customErrors.js";
+import { handlePrismaError } from "../utils/prismaErrorHandler.js";
+import { NotFoundError } from "../utils/customErrors.js";
+import { teamToDTO } from "../dtos/teamDTO.js";
 
 class TeamService {
-  getAllTeams = async () => {
+  async getAllTeams() {
     return await prisma.team.findMany({ orderBy: { id: "asc" } });
-  };
+  }
 
-  findById = async (id) => {
+  async findById(id) {
     return await this.#findTeamOrFail({ id });
-  };
+  }
 
-  findTeamByName = async (name) => {
+  async findTeamByName(name) {
     return await this.#findTeamOrFail({ name });
-  };
+  }
 
-  createTeam = async (data) => {
+  async createTeam(data) {
     try {
-      return await prisma.team.create({
-        data,
-      });
+      return await prisma.team.create({ data });
     } catch (error) {
-      if (error.code === "P2002") {
-        throw new ConflictError("Nome do time já existe.");
-      }
-      throw new InternalServerError("Erro ao criar time.");
+      handlePrismaError(error);
     }
-  };
+  }
 
-  updateTeam = async (id, data) => {
-    await this.#findTeamOrFail({ id });
-    return await prisma.team.update({ where: { id }, data });
-  };
+  async updateTeam(id, data) {
+    try {
+      return await prisma.team.update({ where: { id }, data });
+    } catch (error) {
+      handlePrismaError(error);
+    }
+  }
 
-  deleteTeam = async (id) => {
-    await this.#findTeamOrFail({ id });
-    return await prisma.team.delete({ where: { id } });
-  };
+  async deleteTeam(id) {
+    try {
+      return await prisma.team.delete({ where: { id } });
+    } catch (error) {
+      handlePrismaError(error);
+    }
+  }
 
-  #findTeamOrFail = async (whereClause) => {
-    const team = await prisma.team.findUnique({ where: whereClause });
+  async #findTeamOrFail(whereClausule) {
+    const team = await prisma.team.findUnique({
+      where: whereClausule,
+      include: {
+        homeMatches: { include: { homeTeam: true, awayTeam: true } },
+        awayMatches: { include: { homeTeam: true, awayTeam: true } },
+      },
+    });
     if (!team) throw new NotFoundError("Time não encontrado.");
-    return team;
-  };
+    return teamToDTO(team);
+  }
 }
 
 export default new TeamService();

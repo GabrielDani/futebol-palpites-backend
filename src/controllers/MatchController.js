@@ -1,11 +1,4 @@
 import MatchService from "../services/MatchService.js";
-import { checkSchema } from "../utils/validationUtils.js";
-import {
-  createMatchSchema,
-  updateMatchSchema,
-  uuidMatchSchema,
-} from "../validations/matchValidation.js";
-import { idTeamSchema } from "../validations/teamValidation.js";
 
 class MatchController {
   getAllMatches = async (req, res, next) => {
@@ -19,28 +12,26 @@ class MatchController {
 
   findMatchById = async (req, res, next) => {
     try {
-      const id = checkSchema(req.params.id, uuidMatchSchema);
-      const match = await MatchService.findMatchById(id);
+      const match = await MatchService.findMatchById(req.params.matchId);
       res.status(200).json(match);
     } catch (error) {
       next(error);
     }
   };
 
-  findMatchByTeamId = async (req, res, next) => {
-    try {
-      const teamId = checkSchema(Number(req.params.teamId), idTeamSchema);
-      const matches = await MatchService.findMatchByTeamId(teamId);
-      res.status(200).json(matches);
-    } catch (error) {
-      next(error);
-    }
-  };
+  // findMatchByTeamId = async (req, res, next) => {
+  //   try {
+  //     const teamId = checkSchema(Number(req.params.teamId), idTeamSchema);
+  //     const matches = await MatchService.findMatchByTeamId(teamId);
+  //     res.status(200).json(matches);
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // };
 
   createMatch = async (req, res, next) => {
     try {
-      const data = checkSchema(req.body, createMatchSchema);
-      const match = await MatchService.createMatch(data);
+      const match = await MatchService.createMatch(req.body);
       res.status(201).json(match);
     } catch (error) {
       next(error);
@@ -49,9 +40,10 @@ class MatchController {
 
   updateMatch = async (req, res, next) => {
     try {
-      const id = checkSchema(req.params.id, uuidMatchSchema);
-      const newData = checkSchema(req.body, updateMatchSchema);
-      const match = await MatchService.updateMatch(id, newData);
+      const match = await MatchService.updateMatch(
+        req.params.matchId,
+        req.body
+      );
       res.status(200).json(match);
     } catch (error) {
       next(error);
@@ -60,8 +52,7 @@ class MatchController {
 
   deleteMatch = async (req, res, next) => {
     try {
-      const id = checkSchema(req.params.id, uuidMatchSchema);
-      await MatchService.deleteMatch(id);
+      await MatchService.deleteMatch(req.params.matchId);
       res.status(204).send();
     } catch (error) {
       next(error);

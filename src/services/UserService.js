@@ -1,90 +1,146 @@
 import prisma from "../repositories/prisma.js";
 import { hashPassword } from "../auth/password.js";
-import { userToDTO } from "../dtos/userDTO.js";
-import {
-  ConflictError,
-  NotFoundError,
-  UnauthorizedError,
-} from "../utils/customErrors.js";
+import { groupsToDTO, guessesToDTO, userToDTO } from "../dtos/userDTO.js";
+import { handlePrismaError } from "../utils/prismaErrorHandler.js";
+import { UnauthorizedError } from "../utils/customErrors.js";
 
 class UserService {
+  profile = async (userInfo) => {
+    try {
+      return await prisma.user.findUniqueOrThrow({
+        where: { id: userInfo.id },
+      });
+    } catch (error) {
+      handlePrismaError(error);
+    }
+  };
+
   getAllUsers = async () => {
-    const users = await prisma.user.findMany();
-    return users.map(userToDTO);
+    try {
+      const users = await prisma.user.findMany();
+      return users.map(userToDTO);
+    } catch (error) {
+      handlePrismaError(error);
+    }
   };
 
   findUserById = async (id) => {
-    const user = await this.#findUserOrFail({ id });
-    return userToDTO(user);
+    try {
+      const user = await prisma.user.findUniqueOrThrow({ where: { id } });
+      return userToDTO(user);
+    } catch (error) {
+      console.log(error);
+      handlePrismaError(error);
+    }
   };
 
   findUserByNickname = async (nickname) => {
-    const user = await this.#findUserOrFail({ nickname });
-    return userToDTO(user);
+    try {
+      const user = await prisma.user.findUniqueOrThrow({ where: { nickname } });
+      return userToDTO(user);
+    } catch (error) {
+      handlePrismaError(error);
+    }
+  };
+
+  findUserGroups = async (id) => {
+    try {
+      const groups = await prisma.user.findUniqueOrThrow({
+        where: { id },
+        include: {
+          groups: {
+            include: {
+              group: {
+                include: {
+                  creator: { select: { nickname: true } },
+                  _count: { select: { members: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+      return groupsToDTO(groups);
+    } catch (error) {
+      handlePrismaError(error);
+    }
+  };
+
+  findUserGuesses = async (id) => {
+    try {
+      const guesses = await prisma.user.findUniqueOrThrow({
+        where: { id },
+        include: {
+          guesses: {
+            include: { match: { include: { homeTeam: true, awayTeam: true } } },
+          },
+        },
+      });
+      return guessesToDTO(guesses);
+    } catch (error) {
+      handlePrismaError(error);
+    }
   };
 
   createUser = async (data) => {
-    const { nickname, password } = data;
-    const existingUser = await prisma.user.findUnique({ where: { nickname } });
-    if (existingUser) throw new ConflictError("Nickname já está em uso.");
+    try {
+      const hashedPassword = await hashPassword(data.password);
 
-    const hashedPassword = await hashPassword(password);
+      const user = await prisma.user.create({
+        data: {
+          ...data,
+          password: hashedPassword,
+        },
+      });
 
-    const user = await prisma.user.create({
-      data: {
-        nickname,
-        password: hashedPassword,
-      },
-    });
-
-    return userToDTO(user);
+      return userToDTO(user);
+    } catch (error) {
+      handlePrismaError(error);
+    }
   };
 
-  updateUser = async (id, newData, userInfo) => {
-    this.#verifyPermissionToModify(id, userInfo);
-
-    if (newData.nickname)
-      await this.#verifyNicknameAvailability(newData.nickname);
+  updateUser = async (newData, userInfo) => {
+    this.#verifyPermissionToModify(userInfo);
 
     const data = newData.password
       ? { ...newData, password: await hashPassword(newData.password) }
       : newData;
 
-    const updateUser = await prisma.user.update({
-      where: { id },
-      data,
-    });
+    try {
+      const updateUser = await prisma.user.update({
+        where: { id: userInfo.id },
+        data,
+      });
 
-    return userToDTO(updateUser);
+      return userToDTO(updateUser);
+    } catch (error) {
+      handlePrismaError(error);
+    }
   };
 
   deleteUser = async (id, userInfo) => {
-    await this.#findUserOrFail({ id });
-    this.#verifyPermissionToModify(id, userInfo);
+    this.#verifyPermissionToModify(userInfo);
 
-    return await prisma.user.delete({
-      where: { id },
-    });
+    try {
+      return await prisma.user.delete({
+        where: { id },
+      });
+    } catch (error) {
+      handlePrismaError(error);
+    }
   };
 
   findUserByIdWithoutDTO = async (id) => {
-    return await this.#findUserOrFail({ id });
+    try {
+      return await prisma.user.findUnique({ where: { id } });
+    } catch (error) {
+      handlePrismaError(error);
+    }
   };
 
-  #findUserOrFail = async (whereClause) => {
-    const user = await prisma.user.findUnique({ where: whereClause });
-    if (!user) throw new NotFoundError("Usuário não encontrado.");
-    return user;
-  };
-
-  async #verifyNicknameAvailability(nickname) {
-    const existingUser = await prisma.user.findUnique({ where: { nickname } });
-    if (existingUser) throw new ConflictError("Nickname já está em uso.");
-  }
-
-  #verifyPermissionToModify = (id, userInfo) => {
-    const { idFromToken, role } = userInfo;
-    if (id !== idFromToken && role !== "ADMIN")
+  #verifyPermissionToModify = (userInfo) => {
+    const { id, role } = userInfo;
+    if (!id && role !== "ADMIN")
       throw new UnauthorizedError("Você não pode modificar este usuário.");
   };
 }

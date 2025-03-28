@@ -33,7 +33,7 @@ model Group {
 
   @@unique([name, createdBy])
 
-  creator   User   @relation(fields: [createdBy], references: [id]) // Relação unidirecional
+  creator   User   @relation(fields: [createdBy], references: [id])
   members UserGroup[]
 }
 
@@ -63,12 +63,12 @@ model Match {
   id            String @id @default(uuid())
   homeTeamId    Int
   awayTeamId    Int
-  matchDate     DateTime
+  matchDate     DateTime?
   status        MatchStatus
   round         Int
 
-  homeTeam Team @relation("HomeTeam", fields: [homeTeamId], references: [id])
-  awayTeam Team @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  homeTeam Team @relation("HomeTeam", fields: [homeTeamId], references: [id], onDelete: Cascade)
+  awayTeam Team @relation("AwayTeam", fields: [awayTeamId], references: [id], onDelete: Cascade)
 
   guesses   Guess[]
 }
@@ -85,8 +85,8 @@ model Guess {
   scoreHome Int
   scoreAway Int
   
-  user      User @relation(fields: [userId], references: [id])
-  match     Match @relation(fields: [matchId], references: [id])
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match     Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
   @@id([userId, matchId])
 }

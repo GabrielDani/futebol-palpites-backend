@@ -1,14 +1,12 @@
 import AuthService from "../services/AuthService.js";
 import UserService from "../services/UserService.js";
-import { loginSchema } from "../validations/authValidation.js";
 import { BadRequestError, UnauthorizedError } from "../utils/customErrors.js";
-import { checkSchema } from "../utils/validationUtils.js";
 import { generateAccessToken, verifyToken } from "../auth/jwt.js";
 
 class AuthController {
   login = async (req, res, next) => {
     try {
-      const { nickname, password } = checkSchema(req.body, loginSchema);
+      const { nickname, password } = req.body;
       const tokens = await AuthService.login(nickname, password);
       res.status(200).json(tokens);
     } catch (error) {
@@ -32,7 +30,7 @@ class AuthController {
   refreshToken = async (req, res, next) => {
     const { refreshToken } = req.body;
     if (!refreshToken)
-      return next(new UnauthorizedError("Campo refreshToken não definido."));
+      return next(new BadRequestError("Campo refreshToken não definido."));
 
     try {
       const decoded = verifyToken(refreshToken);

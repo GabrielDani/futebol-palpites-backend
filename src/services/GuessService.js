@@ -1,26 +1,35 @@
 import { guessToDTO } from "../dtos/guessDTO.js";
 import prisma from "../repositories/prisma.js";
 import { UnauthorizedError, NotFoundError } from "../utils/customErrors.js";
+import { handlePrismaError } from "../utils/prismaErrorHandler.js";
 
 class GuessService {
   findGuesses = async () => {
-    const guesses = await prisma.guess.findMany({
-      include: {
-        user: { select: { nickname: true } },
-        match: { include: { homeTeam: true, awayTeam: true } },
-      },
-    });
-    return guesses.map(guessToDTO);
+    try {
+      const guesses = await prisma.guess.findMany({
+        include: {
+          user: { select: { nickname: true } },
+          match: { include: { homeTeam: true, awayTeam: true } },
+        },
+      });
+      return guesses.map(guessToDTO);
+    } catch (error) {
+      handlePrismaError(error);
+    }
   };
 
   createOrUpdateGuess = async (userId, data) => {
     return await prisma.$transaction(async (tx) => {
       await this.#validateMatchStatus(tx, data.matchId);
-      return await tx.guess.upsert({
-        where: { userId_matchId: { userId, matchId: data.matchId } },
-        update: data,
-        create: { ...data, userId },
-      });
+      try {
+        return await tx.guess.upsert({
+          where: { userId_matchId: { userId, matchId: data.matchId } },
+          update: data,
+          create: { ...data, userId },
+        });
+      } catch (error) {
+        handlePrismaError(error);
+      }
     });
   };
 
@@ -33,7 +42,7 @@ class GuessService {
           where: { userId_matchId: { userId, matchId } },
         });
       } catch (error) {
-        throw new NotFoundError("Palpite não encontrado.");
+        handlePrismaError(error);
       }
     });
   };

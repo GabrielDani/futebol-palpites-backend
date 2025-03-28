@@ -1,20 +1,23 @@
 import { z } from "zod";
+import { createFieldSchema } from "../utils/baseSchema.js";
 
 const noSpacesRegex = /^\S*$/;
 
-export const uuidUserSchema = z.string().uuid("O ID deve ser padrão UUID.");
-
-export const nicknameUserSchema = z
-  .string()
-  .min(3, "O nickname deve ter pelo menos 3 caracteres.")
-  .regex(noSpacesRegex, "O nickname não pode conter espaços.");
-
-export const createUserSchema = z.object({
-  nickname: z
-    .string()
-    .min(3, "O nickname deve ter pelo menos 3 caracteres.")
-    .regex(noSpacesRegex, "O nickname não pode conter espaços."),
-  password: z.string().min(5, "A senha deve ter pelo menos 5 caracteres."),
+export const idSchema = z.object({
+  id: createFieldSchema.uuid("ID"),
 });
 
-export const updateUserSchema = createUserSchema.partial();
+export const nicknameSchema = z.object({
+  nickname: createFieldSchema
+    .string("nickname", { min: 3, max: 15 })
+    .regex(noSpacesRegex, "O nickname não pode conter espaços"),
+});
+
+export const createSchema = z.object({
+  nickname: createFieldSchema
+    .string("nickname", { min: 3, max: 15 })
+    .regex(noSpacesRegex, "O nickname não pode conter espaços"),
+  password: createFieldSchema.string("password", { min: 3, max: 15 }),
+});
+
+export const updateSchema = createFieldSchema.transformPartial(createSchema);

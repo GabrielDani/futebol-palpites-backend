@@ -5,19 +5,31 @@ import {
   ConflictError,
   NotFoundError,
 } from "../utils/customErrors.js";
+import { handlePrismaError } from "../utils/prismaErrorHandler.js";
 
 class MatchService {
   getAllMatches = async () => {
-    const matches = await prisma.match.findMany({
-      include: { homeTeam: true, awayTeam: true },
-      orderBy: { round: "asc" },
-    });
-    return matches.map(matchToDTO);
+    try {
+      const matches = await prisma.match.findMany({
+        include: { homeTeam: true, awayTeam: true },
+        orderBy: { round: "asc" },
+      });
+      return matches.map(matchToDTO);
+    } catch (error) {
+      handlePrismaError(error);
+    }
   };
 
   findMatchById = async (id) => {
-    const match = await this.#findMatchOrFail(id);
-    return matchToDTO(match);
+    try {
+      const match = await prisma.match.findUnique({
+        where: { id },
+        include: { homeTeam: true, awayTeam: true },
+      });
+      return matchToDTO(match);
+    } catch (error) {
+      handlePrismaError(error);
+    }
   };
 
   findMatchByTeamId = async (teamId) => {

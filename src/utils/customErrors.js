@@ -48,8 +48,8 @@ export class ValidationError extends Error {
 }
 
 export class InternalServerError extends Error {
-  constructor() {
-    super("Erro interno do servidor.");
+  constructor(message) {
+    super(message);
     this.name = "InternalServerError";
     this.status = 500;
   }

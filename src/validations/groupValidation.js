@@ -1,12 +1,14 @@
 import { z } from "zod";
+import { createFieldSchema } from "../utils/baseSchema.js";
 
 export const createGroupSchema = z.object({
-  name: z
-    .string()
-    .min(3, { message: "O nome deve ter pelo menos 3 caracteres." }),
-  isPublic: z.boolean().default(true),
+  name: createFieldSchema.string("name", { min: 3, max: 15 }),
+  isPublic: createFieldSchema.boolean("isPublic", {
+    defaultValue: false,
+    required: false,
+  }),
 });
 
-export const groupIdSchema = z
-  .string()
-  .uuid({ message: "O ID do grupo deve ser um UUID válido. " });
+export const idSchema = z.object({
+  groupId: createFieldSchema.uuid("ID"),
+});

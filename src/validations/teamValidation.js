@@ -1,26 +1,22 @@
 import { z } from "zod";
+import { createFieldSchema } from "../utils/baseSchema.js";
 
-export const idTeamSchema = z
-  .number({
-    invalid_type_error: "O ID deve ser um número.",
-  })
-  .int("O ID deve ser um número inteiro");
-
-export const nameTeamSchema = z
-  .string()
-  .min(3, "O nome deve conter pelo menos 3 caracteres.");
-
-export const createTeamSchema = z.object({
-  name: z.string().min(3, "O nome do time deve ter pelo menos 3 caracteres."),
-  shortName: z
-    .string()
-    .length(3, "A abreviação do time deve ter 3 caracteres.")
-    .regex(
-      /^[A-Z]{3}$/,
-      "A abreviação do time deve ter exatamente 3 letras maiúsculas."
-    )
-    .optional(),
-  logoUrl: z.string().url("A URL do logo deve ser uma URL válida.").optional(),
+export const idSchema = z.object({
+  id: createFieldSchema.positiveInt("ID", {
+    min: 0,
+    max: 50,
+  }),
 });
 
-export const updateTeamSchema = createTeamSchema.partial();
+export const nameSchema = z.object({
+  name: createFieldSchema.string("name", { min: 3 }),
+});
+
+export const createTeamSchema = z.object({
+  name: createFieldSchema.string("name", { min: 3, max: 20 }),
+  shortName: createFieldSchema.string("shortName", { min: 3, max: 3 }),
+  logoUrl: createFieldSchema.url("logoUrl"),
+});
+
+export const updateTeamSchema =
+  createFieldSchema.transformPartial(createTeamSchema);

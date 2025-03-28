@@ -1,11 +1,4 @@
 import TeamService from "../services/TeamService.js";
-import { checkSchema } from "../utils/validationUtils.js";
-import {
-  createTeamSchema,
-  updateTeamSchema,
-  idTeamSchema,
-  nameTeamSchema,
-} from "../validations/teamValidation.js";
 
 class TeamController {
   async getAllTeams(req, res, next) {
@@ -19,8 +12,7 @@ class TeamController {
 
   async findById(req, res, next) {
     try {
-      const id = checkSchema(Number(req.params.id), idTeamSchema);
-      const team = await TeamService.findById(id);
+      const team = await TeamService.findById(Number(req.params.id));
       return res.status(200).json(team);
     } catch (error) {
       next(error);
@@ -29,8 +21,7 @@ class TeamController {
 
   async findTeamByName(req, res, next) {
     try {
-      const name = checkSchema(req.query.name, nameTeamSchema);
-      const team = await TeamService.findTeamByName(name);
+      const team = await TeamService.findTeamByName(req.query.name);
       return res.status(200).json(team);
     } catch (error) {
       next(error);
@@ -39,8 +30,7 @@ class TeamController {
 
   async createTeam(req, res, next) {
     try {
-      const data = checkSchema(req.body, createTeamSchema);
-      const team = await TeamService.createTeam(data);
+      const team = await TeamService.createTeam(req.body);
       return res.status(201).json(team);
     } catch (error) {
       next(error);
@@ -49,9 +39,10 @@ class TeamController {
 
   async updateTeam(req, res, next) {
     try {
-      const id = checkSchema(Number(req.params.id), idTeamSchema);
-      const data = checkSchema(req.body, updateTeamSchema);
-      const team = await TeamService.updateTeam(id, data);
+      const team = await TeamService.updateTeam(
+        Number(req.params.id),
+        req.body
+      );
       return res.status(200).json(team);
     } catch (error) {
       next(error);
@@ -60,8 +51,7 @@ class TeamController {
 
   async deleteTeam(req, res, next) {
     try {
-      const id = checkSchema(Number(req.params.id), idTeamSchema);
-      await TeamService.deleteTeam(id);
+      await TeamService.deleteTeam(Number(req.params.id));
       return res.status(204).json();
     } catch (error) {
       next(error);
