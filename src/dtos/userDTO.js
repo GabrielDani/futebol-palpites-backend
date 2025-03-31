@@ -7,7 +7,6 @@ export function userToDTO(user) {
 }
 
 export function groupsToDTO(data) {
-  data.groups?.map((group) => console.log(group));
   return {
     groups:
       data.groups?.map((g) => ({
