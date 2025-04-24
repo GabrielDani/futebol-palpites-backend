@@ -9,6 +9,8 @@ import groupRoutes from "./routes/groupRoutes.js";
 import teamRoutes from "./routes/teamRoutes.js";
 import matchRoutes from "./routes/matchRoutes.js";
 import guessRoutes from "./routes/guessRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import rankingRoutes from "./routes/rankingRoutes.js";
 import { authMiddleware } from "./middlewares/authMiddleware.js";
 import errorMiddleware from "./middlewares/errorMiddleware.js";
 
@@ -25,6 +27,8 @@ app.use("/groups", groupRoutes);
 app.use("/teams", authMiddleware, teamRoutes);
 app.use("/matches", matchRoutes);
 app.use("/guesses", guessRoutes);
+app.use("/admin", adminRoutes);
+app.use("/ranking", rankingRoutes);
 
 app.use(errorMiddleware);
 

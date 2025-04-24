@@ -54,10 +54,120 @@ export default router;
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     Team:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 1
+ *         name:
+ *           type: string
+ *           example: "Flamengo"
+ *         shortName:
+ *           type: string
+ *           nullable: true
+ *           example: "FLA"
+ *         logoUrl:
+ *           type: string
+ *           format: uri
+ *           nullable: true
+ *           example: "https://example.com/logo.png"
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           example: "2023-01-01T00:00:00Z"
+ *         homeMatches:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/MatchWithTeams'
+ *         awayMatches:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/MatchWithTeams'
+ *
+ *     MatchWithTeams:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         date:
+ *           type: string
+ *           format: date-time
+ *         status:
+ *           type: string
+ *           enum: [PENDING, ONGOING, FINISHED]
+ *         round:
+ *           type: integer
+ *         scoreHome:
+ *           type: integer
+ *           nullable: true
+ *         scoreAway:
+ *           type: integer
+ *           nullable: true
+ *         homeTeam:
+ *           $ref: '#/components/schemas/TeamBasic'
+ *         awayTeam:
+ *           $ref: '#/components/schemas/TeamBasic'
+ *
+ *     TeamBasic:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         name:
+ *           type: string
+ *         shortName:
+ *           type: string
+ *           nullable: true
+ *         logoUrl:
+ *           type: string
+ *           format: uri
+ *           nullable: true
+ *
+ *     CreateTeam:
+ *       type: object
+ *       required:
+ *         - name
+ *       properties:
+ *         name:
+ *           type: string
+ *           example: "Flamengo"
+ *         shortName:
+ *           type: string
+ *           nullable: true
+ *           example: "FLA"
+ *         logoUrl:
+ *           type: string
+ *           format: uri
+ *           nullable: true
+ *           example: "https://example.com/logo.png"
+ *
+ *     UpdateTeam:
+ *       type: object
+ *       properties:
+ *         name:
+ *           type: string
+ *           example: "Flamengo"
+ *         shortName:
+ *           type: string
+ *           nullable: true
+ *           example: "FLA"
+ *         logoUrl:
+ *           type: string
+ *           format: uri
+ *           nullable: true
+ *           example: "https://example.com/logo.png"
+ */
+
+/**
+ * @swagger
  * /teams:
  *   get:
  *     summary: Lista todos os times ou busca por nome
- *     description: Retorna todos os times ou filtra por nome se o parâmetro name for fornecido
+ *     description: Retorna todos os times cadastrados ou filtra por nome quando fornecido
  *     tags: [Times]
  *     parameters:
  *       - in: query
@@ -75,7 +185,7 @@ export default router;
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Team'
+ *                 $ref: '#/components/schemas/TeamBasic'
  *       400:
  *         description: Parâmetro de busca inválido
  */
@@ -84,8 +194,8 @@ export default router;
  * @swagger
  * /teams/{id}:
  *   get:
- *     summary: Obtém um time específico
- *     description: Retorna os detalhes de um time pelo seu ID
+ *     summary: Obtém detalhes de um time
+ *     description: Retorna os detalhes completos de um time incluindo suas partidas
  *     tags: [Times]
  *     parameters:
  *       - in: path
@@ -94,10 +204,11 @@ export default router;
  *           type: integer
  *           minimum: 1
  *         required: true
+ *         description: ID do time
  *         example: 1
  *     responses:
  *       200:
- *         description: Time retornado com sucesso
+ *         description: Detalhes do time retornados com sucesso
  *         content:
  *           application/json:
  *             schema:
@@ -112,7 +223,7 @@ export default router;
  * @swagger
  * /teams:
  *   post:
- *     summary: Cria um novo time (Apenas admin)
+ *     summary: Cria um novo time (Admin)
  *     description: Cria um novo time no campeonato (requer privilégios de administrador)
  *     tags: [Times]
  *     security:
@@ -142,7 +253,7 @@ export default router;
  * @swagger
  * /teams/{id}:
  *   put:
- *     summary: Atualiza um time (Apenas admin)
+ *     summary: Atualiza um time (Admin)
  *     description: Atualiza os dados de um time existente (requer privilégios de administrador)
  *     tags: [Times]
  *     security:
@@ -154,6 +265,7 @@ export default router;
  *           type: integer
  *           minimum: 1
  *         required: true
+ *         description: ID do time
  *         example: 1
  *     requestBody:
  *       required: true
@@ -182,7 +294,7 @@ export default router;
  * @swagger
  * /teams/{id}:
  *   delete:
- *     summary: Remove um time (Apenas admin)
+ *     summary: Remove um time (Admin)
  *     description: Remove um time do campeonato (requer privilégios de administrador)
  *     tags: [Times]
  *     security:
@@ -194,6 +306,7 @@ export default router;
  *           type: integer
  *           minimum: 1
  *         required: true
+ *         description: ID do time
  *         example: 1
  *     responses:
  *       204:
@@ -206,64 +319,4 @@ export default router;
  *         description: Acesso negado (requer admin)
  *       404:
  *         description: Time não encontrado
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Team:
- *       type: object
- *       properties:
- *         id:
- *           type: integer
- *           minimum: 1
- *           example: 1
- *         name:
- *           type: string
- *           example: "Flamengo"
- *         shortName:
- *           type: string
- *           example: "FLA"
- *         logoUrl:
- *           type: string
- *           format: uri
- *           nullable: true
- *           example: "https://example.com/logo/flamengo.png"
- *         createdAt:
- *           type: string
- *           format: date-time
- *           example: "2023-05-01T10:00:00Z"
- *
- *     CreateTeam:
- *       type: object
- *       required:
- *         - name
- *       properties:
- *         name:
- *           type: string
- *           example: "Flamengo"
- *         shortName:
- *           type: string
- *           example: "FLA"
- *         logoUrl:
- *           type: string
- *           format: uri
- *           nullable: true
- *           example: "https://example.com/logo/flamengo.png"
- *
- *     UpdateTeam:
- *       type: object
- *       properties:
- *         name:
- *           type: string
- *           example: "Flamengo"
- *         shortName:
- *           type: string
- *           example: "FLA"
- *         logoUrl:
- *           type: string
- *           format: uri
- *           nullable: true
- *           example: "https://example.com/logo/flamengo.png"
  */

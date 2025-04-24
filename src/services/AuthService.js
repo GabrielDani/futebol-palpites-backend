@@ -6,16 +6,19 @@ import {
   verifyToken,
 } from "../auth/jwt.js";
 import { NotFoundError, UnauthorizedError } from "../utils/customErrors.js";
+import { userToDTO } from "../dtos/userDTO.js";
 
 class AuthService {
   login = async (nickname, password) => {
-    const user = await this.#findUserByNickname(nickname);
-    await this.#verifyPassword(user, password);
+    return await prisma.$transaction(async (tx) => {
+      let user = await this.#findUser(tx, { nickname });
+      await this.#verifyPassword(user, password);
+      const token = generateAccessToken(user);
+      const refreshToken = generateRefreshToken(user.id);
 
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user.id);
-
-    return { accessToken, refreshToken };
+      user = userToDTO(user);
+      return { token, refreshToken, user };
+    });
   };
 
   logout = async (refreshToken) => {
@@ -32,15 +35,15 @@ class AuthService {
     return !!revoked;
   };
 
-  #findUserByNickname = async (nickname) => {
-    const user = await prisma.user.findUnique({ where: { nickname } });
+  #findUser = async (tx, whereClause) => {
+    const user = await tx.user.findUnique({ where: whereClause });
     if (!user) throw new NotFoundError("Usuário não encontrado.");
     return user;
   };
 
   #verifyPassword = async (user, password) => {
     const isPasswordValid = await comparePassword(password, user.password);
-    if (!isPasswordValid) throw new UnauthorizedError("Senha inválida");
+    if (!isPasswordValid) throw new UnauthorizedError("Senha inválida.");
   };
 }
 

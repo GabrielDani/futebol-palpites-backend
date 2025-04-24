@@ -19,15 +19,44 @@ class MatchController {
     }
   };
 
-  // findMatchByTeamId = async (req, res, next) => {
-  //   try {
-  //     const teamId = checkSchema(Number(req.params.teamId), idTeamSchema);
-  //     const matches = await MatchService.findMatchByTeamId(teamId);
-  //     res.status(200).json(matches);
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // };
+  findNextMatches = async (req, res, next) => {
+    try {
+      const matches = await MatchService.findNextMatches(
+        Number(req.params.quantity)
+      );
+      res.status(200).json(matches);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  findMatchByRound = async (req, res, next) => {
+    try {
+      console.log(
+        `[MatchController] (findMatchByRound) Procurando partidas do round ${req.params.round}...`
+      );
+      const matches = await MatchService.findMatchByRound(
+        Number(req.params.round)
+      );
+      console.log(
+        `[MatchController] (findMatchByRound) Quantidade de partidas encontradas do round ${req.params.round}: ${matches.length}`
+      );
+      res.status(200).json(matches);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getStandings = async (req, res, next) => {
+    try {
+      console.log(`[MatchController](getStandings) Ordenando classificação...`);
+      const standings = await MatchService.getStandings();
+      // console.log(`[MatchController](getStandings) Classificação:`, standings);
+      res.status(200).json(standings);
+    } catch (error) {
+      next(error);
+    }
+  };
 
   createMatch = async (req, res, next) => {
     try {

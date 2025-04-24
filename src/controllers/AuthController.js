@@ -10,6 +10,7 @@ class AuthController {
       const tokens = await AuthService.login(nickname, password);
       res.status(200).json(tokens);
     } catch (error) {
+      console.log(error);
       next(error);
     }
   };
@@ -40,10 +41,12 @@ class AuthController {
           new UnauthorizedError("Token revogado. Faça login novamente.")
         );
 
-      const user = await UserService.findUserByIdWithoutDTO(decoded.id);
+      const user = await UserService.findUser({ id: decoded.id });
       const newAccessToken = generateAccessToken(user);
 
-      res.status(200).json({ accessToken: newAccessToken });
+      res.status(200).json({
+        token: newAccessToken,
+      });
     } catch (error) {
       next(new UnauthorizedError("Refresh token inválido."));
     }

@@ -17,7 +17,7 @@ const router = Router();
  * /auth/login:
  *   post:
  *     summary: Realiza login do usuário
- *     description: Autentica um usuário e retorna tokens de acesso e refresh
+ *     description: Autentica um usuário e retorna tokens de acesso e refresh junto com informações do usuário
  *     tags: [Autenticação]
  *     requestBody:
  *       required: true
@@ -44,16 +44,52 @@ const router = Router();
  *             schema:
  *               type: object
  *               properties:
- *                 accessToken:
+ *                 token:
  *                   type: string
+ *                   description: Token de acesso JWT
  *                   example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *                 refreshToken:
  *                   type: string
+ *                   description: Token para renovar o acesso
  *                   example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       format: uuid
+ *                       example: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+ *                     nickname:
+ *                       type: string
+ *                       example: "usuario123"
+ *                     role:
+ *                       type: string
+ *                       enum: [USER, ADMIN]
+ *                       example: "USER"
+ *                     createdAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2023-01-01T00:00:00.000Z"
  *       400:
  *         description: Dados inválidos ou faltando
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Nickname e senha são obrigatórios"
  *       401:
  *         description: Credenciais inválidas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Credenciais inválidas"
  */
 router.post("/login", validateSchema(loginSchema), AuthController.login);
 
@@ -64,6 +100,8 @@ router.post("/login", validateSchema(loginSchema), AuthController.login);
  *     summary: Realiza logout do usuário
  *     description: Invalida o token de refresh do usuário
  *     tags: [Autenticação]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -79,8 +117,24 @@ router.post("/login", validateSchema(loginSchema), AuthController.login);
  *     responses:
  *       200:
  *         description: Logout realizado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Logout realizado com sucesso."
  *       401:
  *         description: Token inválido ou não fornecido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Token inválido"
  */
 router.post("/logout", AuthController.logout);
 
@@ -111,13 +165,30 @@ router.post("/logout", AuthController.logout);
  *             schema:
  *               type: object
  *               properties:
- *                 accessToken:
+ *                 token:
  *                   type: string
+ *                   description: Novo token de acesso JWT
  *                   example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *       400:
  *         description: Refresh token inválido ou faltando
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Refresh token é obrigatório"
  *       401:
  *         description: Refresh token expirado ou inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Refresh token inválido ou expirado"
  */
 router.post("/refresh", AuthController.refreshToken);
 

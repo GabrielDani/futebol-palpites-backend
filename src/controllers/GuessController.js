@@ -10,13 +10,33 @@ class GuessController {
     }
   };
 
+  findMyGuesses = async (req, res, next) => {
+    try {
+      console.log(
+        "[GuessController][findMyGuesses] Buscando palpites do usuário",
+        req.user.id
+      );
+      const guesses = await GuessService.findMyGuesses(req.user.id);
+      console.log(
+        `[GuessController][findMyGuesses] Palpites do usuário ${req.user.id}: ${guesses}`
+      );
+      res.status(200).json(guesses);
+    } catch (error) {
+      next(error);
+    }
+  };
+
   createOrUpdateGuess = async (req, res, next) => {
     try {
-      const guess = await GuessService.createOrUpdateGuess(
+      const result = await GuessService.createOrUpdateGuess(
         req.user.id,
         req.body
       );
-      res.status(201).json(guess);
+      return res.status(200).json({
+        message: "Palpites processados com sucesso",
+        created: result.createdCount,
+        updated: result.updatedCount,
+      });
     } catch (error) {
       next(error);
     }

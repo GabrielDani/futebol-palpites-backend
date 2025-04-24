@@ -17,7 +17,7 @@ export const createSchema = z.object({
   nickname: createFieldSchema
     .string("nickname", { min: 3, max: 15 })
     .regex(noSpacesRegex, "O nickname não pode conter espaços"),
-  password: createFieldSchema.string("password", { min: 3, max: 15 }),
+  password: createFieldSchema.string("password", { min: 4, max: 10 }),
 });
 
 export const updateSchema = createFieldSchema.transformPartial(createSchema);

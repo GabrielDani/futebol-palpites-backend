@@ -8,6 +8,8 @@ import validateSchema from "../middlewares/validationMiddleware.js";
 import {
   createMatchSchema,
   idSchema,
+  quantity,
+  round,
   updateMatchSchema,
 } from "../validations/matchValidation.js";
 
@@ -16,22 +18,28 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get("/", MatchController.getAllMatches);
-
 router.get(
-  "/:matchId",
+  "/nextmatches/:quantity",
+  validateSchema(quantity, "params"),
+  MatchController.findNextMatches
+);
+router.get(
+  "/round/:round",
+  validateSchema(round, "params"),
+  MatchController.findMatchByRound
+);
+router.get("/standings", MatchController.getStandings);
+router.get(
+  "/id/:matchId",
   validateSchema(idSchema, "params"),
   MatchController.findMatchById
 );
-
-// router.get("/team/:teamId", MatchController.findMatchByTeamId);
-
 router.post(
   "/",
   adminMiddleware,
   validateSchema(createMatchSchema),
   MatchController.createMatch
 );
-
 router.put(
   "/:matchId",
   adminMiddleware,
@@ -39,7 +47,6 @@ router.put(
   validateSchema(updateMatchSchema),
   MatchController.updateMatch
 );
-
 router.delete(
   "/:matchId",
   adminMiddleware,
@@ -51,6 +58,13 @@ export default router;
 
 /**
  * @swagger
+ * tags:
+ *   name: Partidas
+ *   description: Endpoints para gerenciamento de partidas do campeonato
+ */
+
+/**
+ * @swagger
  * components:
  *   schemas:
  *     Match:
@@ -59,34 +73,65 @@ export default router;
  *         id:
  *           type: string
  *           format: uuid
- *           example: "d9d90a1a-fc91-451c-adae-8fa25d3b1d02"
- *         homeTeamId:
- *           type: integer
- *           minimum: 0
- *           example: 1
- *         awayTeamId:
- *           type: integer
- *           minimum: 0
- *           example: 2
- *         matchDate:
+ *         homeTeam:
+ *           $ref: '#/components/schemas/Team'
+ *         awayTeam:
+ *           $ref: '#/components/schemas/Team'
+ *         date:
  *           type: string
  *           format: date-time
- *           nullable: true
- *           example: "2023-05-15T19:00:00Z"
  *         status:
  *           type: string
  *           enum: [PENDING, ONGOING, FINISHED]
- *           default: "PENDING"
- *           example: "PENDING"
  *         round:
  *           type: integer
- *           minimum: 1
- *           maximum: 38
- *           example: 1
+ *         scoreHome:
+ *           type: integer
+ *           nullable: true
+ *         scoreAway:
+ *           type: integer
+ *           nullable: true
  *         createdAt:
  *           type: string
  *           format: date-time
- *           example: "2023-05-01T10:00:00Z"
+ *
+ *     Team:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         name:
+ *           type: string
+ *         shortName:
+ *           type: string
+ *           nullable: true
+ *         logoUrl:
+ *           type: string
+ *           nullable: true
+ *
+ *     Standing:
+ *       type: object
+ *       properties:
+ *         position:
+ *           type: integer
+ *         team:
+ *           $ref: '#/components/schemas/Team'
+ *         points:
+ *           type: integer
+ *         matches:
+ *           type: integer
+ *         wins:
+ *           type: integer
+ *         draws:
+ *           type: integer
+ *         losses:
+ *           type: integer
+ *         goalsFor:
+ *           type: integer
+ *         goalsAgainst:
+ *           type: integer
+ *         goalDifference:
+ *           type: integer
  *
  *     CreateMatch:
  *       type: object
@@ -97,53 +142,37 @@ export default router;
  *       properties:
  *         homeTeamId:
  *           type: integer
- *           minimum: 0
- *           example: 1
  *         awayTeamId:
  *           type: integer
- *           minimum: 0
- *           example: 2
- *         matchDate:
+ *         date:
  *           type: string
  *           format: date-time
  *           nullable: true
- *           example: "2023-05-15T19:00:00Z"
- *         status:
- *           type: string
- *           enum: [PENDING, ONGOING, FINISHED]
- *           default: "PENDING"
- *           example: "PENDING"
  *         round:
  *           type: integer
- *           minimum: 1
- *           maximum: 38
- *           example: 1
  *
  *     UpdateMatch:
  *       type: object
  *       properties:
  *         homeTeamId:
  *           type: integer
- *           minimum: 0
- *           example: 1
  *         awayTeamId:
  *           type: integer
- *           minimum: 0
- *           example: 2
- *         matchDate:
+ *         date:
  *           type: string
  *           format: date-time
  *           nullable: true
- *           example: "2023-05-15T19:00:00Z"
  *         status:
  *           type: string
  *           enum: [PENDING, ONGOING, FINISHED]
- *           example: "ONGOING"
  *         round:
  *           type: integer
- *           minimum: 1
- *           maximum: 38
- *           example: 1
+ *         scoreHome:
+ *           type: integer
+ *           nullable: true
+ *         scoreAway:
+ *           type: integer
+ *           nullable: true
  */
 
 /**
@@ -151,7 +180,7 @@ export default router;
  * /matches:
  *   get:
  *     summary: Lista todas as partidas
- *     description: Retorna todas as partidas do campeonato
+ *     description: Retorna todas as partidas do campeonato ordenadas por data
  *     tags: [Partidas]
  *     security:
  *       - bearerAuth: []
@@ -170,10 +199,96 @@ export default router;
 
 /**
  * @swagger
- * /matches/{matchId}:
+ * /matches/nextmatches/{quantity}:
  *   get:
- *     summary: Obtém uma partida específica
- *     description: Retorna os detalhes de uma partida pelo seu ID
+ *     summary: Lista próximas partidas
+ *     description: Retorna as próximas partidas agendadas (limitado pela quantidade)
+ *     tags: [Partidas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: quantity
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: Quantidade de partidas a serem retornadas
+ *     responses:
+ *       200:
+ *         description: Próximas partidas retornadas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Match'
+ *       400:
+ *         description: Quantidade inválida
+ *       401:
+ *         description: Não autorizado
+ */
+
+/**
+ * @swagger
+ * /matches/round/{round}:
+ *   get:
+ *     summary: Lista partidas por rodada
+ *     description: Retorna todas as partidas de uma rodada específica
+ *     tags: [Partidas]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: round
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: Número da rodada
+ *     responses:
+ *       200:
+ *         description: Partidas da rodada retornadas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Match'
+ *       400:
+ *         description: Rodada inválida
+ *       401:
+ *         description: Não autorizado
+ */
+
+/**
+ * @swagger
+ * /matches/standings:
+ *   get:
+ *     summary: Obtém a tabela de classificação
+ *     description: Retorna a tabela de classificação do campeonato
+ *     tags: [Partidas]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Tabela de classificação retornada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Standing'
+ *       401:
+ *         description: Não autorizado
+ */
+
+/**
+ * @swagger
+ * /matches/id/{matchId}:
+ *   get:
+ *     summary: Obtém detalhes de uma partida
+ *     description: Retorna os detalhes completos de uma partida específica
  *     tags: [Partidas]
  *     security:
  *       - bearerAuth: []
@@ -184,10 +299,10 @@ export default router;
  *           type: string
  *           format: uuid
  *         required: true
- *         example: "d9d90a1a-fc91-451c-adae-8fa25d3b1d02"
+ *         description: ID da partida
  *     responses:
  *       200:
- *         description: Partida retornada com sucesso
+ *         description: Detalhes da partida retornados com sucesso
  *         content:
  *           application/json:
  *             schema:
@@ -204,7 +319,7 @@ export default router;
  * @swagger
  * /matches:
  *   post:
- *     summary: Cria uma nova partida (Apenas admin)
+ *     summary: Cria uma nova partida (Admin)
  *     description: Cria uma nova partida no campeonato (requer privilégios de administrador)
  *     tags: [Partidas]
  *     security:
@@ -223,18 +338,20 @@ export default router;
  *             schema:
  *               $ref: '#/components/schemas/Match'
  *       400:
- *         description: Dados inválidos ou faltando
+ *         description: Dados inválidos ou times iguais
  *       401:
  *         description: Não autorizado
  *       403:
  *         description: Acesso negado (requer admin)
+ *       409:
+ *         description: Conflito (time já tem partida na rodada)
  */
 
 /**
  * @swagger
  * /matches/{matchId}:
  *   put:
- *     summary: Atualiza uma partida (Apenas admin)
+ *     summary: Atualiza uma partida (Admin)
  *     description: Atualiza os dados de uma partida existente (requer privilégios de administrador)
  *     tags: [Partidas]
  *     security:
@@ -246,7 +363,7 @@ export default router;
  *           type: string
  *           format: uuid
  *         required: true
- *         example: "d9d90a1a-fc91-451c-adae-8fa25d3b1d02"
+ *         description: ID da partida
  *     requestBody:
  *       required: true
  *       content:
@@ -261,20 +378,22 @@ export default router;
  *             schema:
  *               $ref: '#/components/schemas/Match'
  *       400:
- *         description: ID inválido ou dados incorretos
+ *         description: Dados inválidos ou times iguais
  *       401:
  *         description: Não autorizado
  *       403:
  *         description: Acesso negado (requer admin)
  *       404:
  *         description: Partida não encontrada
+ *       409:
+ *         description: Conflito (time já tem partida na rodada)
  */
 
 /**
  * @swagger
  * /matches/{matchId}:
  *   delete:
- *     summary: Remove uma partida (Apenas admin)
+ *     summary: Remove uma partida (Admin)
  *     description: Remove uma partida do campeonato (requer privilégios de administrador)
  *     tags: [Partidas]
  *     security:
@@ -286,7 +405,7 @@ export default router;
  *           type: string
  *           format: uuid
  *         required: true
- *         example: "d9d90a1a-fc91-451c-adae-8fa25d3b1d02"
+ *         description: ID da partida
  *     responses:
  *       204:
  *         description: Partida removida com sucesso

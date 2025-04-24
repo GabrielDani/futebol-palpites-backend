@@ -63,7 +63,9 @@ model Match {
   id            String @id @default(uuid())
   homeTeamId    Int
   awayTeamId    Int
-  matchDate     DateTime?
+  scoreHome     Int?
+  scoreAway     Int?
+  date          DateTime?
   status        MatchStatus
   round         Int
 

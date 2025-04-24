@@ -2,6 +2,7 @@ export function userToDTO(user) {
   return {
     id: user.id,
     nickname: user.nickname,
+    role: user.role,
     createdAt: user.createdAt,
   };
 }

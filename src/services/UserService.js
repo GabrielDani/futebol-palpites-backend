@@ -5,6 +5,17 @@ import { handlePrismaError } from "../utils/prismaErrorHandler.js";
 import { UnauthorizedError } from "../utils/customErrors.js";
 
 class UserService {
+  me = async (userInfo) => {
+    try {
+      const user = await prisma.user.findFirstOrThrow({
+        where: { id: userInfo.id },
+      });
+      return userToDTO(user);
+    } catch (error) {
+      handlePrismaError(error);
+    }
+  };
+
   profile = async (userInfo) => {
     try {
       return await prisma.user.findUniqueOrThrow({
@@ -130,9 +141,9 @@ class UserService {
     }
   };
 
-  findUserByIdWithoutDTO = async (id) => {
+  findUser = async (whereClause) => {
     try {
-      return await prisma.user.findUnique({ where: { id } });
+      return await prisma.user.findUniqueOrThrow({ where: whereClause });
     } catch (error) {
       handlePrismaError(error);
     }

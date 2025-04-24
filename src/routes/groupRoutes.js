@@ -8,47 +8,302 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.post(
-  "/",
-  validateSchema(createGroupSchema),
-  GroupController.createGroup
-);
-
-router.get("/", GroupController.getAllGroups);
-
-router.post(
-  "/join/:groupId",
-  validateSchema(idSchema, "params"),
-  GroupController.joinGroup
-);
-
-router.post(
-  "/leave/:groupId",
-  validateSchema(idSchema, "params"),
-  GroupController.leaveGroup
-);
-
-router.delete(
-  "/:groupId",
-  validateSchema(idSchema, "params"),
-  GroupController.deleteGroup
-);
-
-export default router;
-
 /**
  * @swagger
  * tags:
  *   name: Grupos
- *   description: Endpoints para gerenciamento de grupos de apostas
+ *   description: Gerenciamento de grupos de apostas
  */
+
+/**
+ * @swagger
+ * /groups:
+ *   get:
+ *     summary: Lista todos os grupos acessíveis
+ *     description: Retorna todos os grupos públicos ou privados que o usuário faz parte
+ *     tags: [Grupos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de grupos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     format: uuid
+ *                   name:
+ *                     type: string
+ *                   isPublic:
+ *                     type: boolean
+ *                   creator:
+ *                     type: object
+ *                     properties:
+ *                       nickname:
+ *                         type: string
+ *                   _count:
+ *                     type: object
+ *                     properties:
+ *                       members:
+ *                         type: integer
+ *       401:
+ *         description: Não autorizado
+ */
+router.get("/", GroupController.getAllGroups);
+
+/**
+ * @swagger
+ * /groups/mygroups:
+ *   get:
+ *     summary: Lista os grupos do usuário
+ *     description: Retorna todos os grupos que o usuário logado faz parte
+ *     tags: [Grupos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de grupos do usuário
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     format: uuid
+ *                   name:
+ *                     type: string
+ *                   isPublic:
+ *                     type: boolean
+ *                   memberCount:
+ *                     type: integer
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                   createdBy:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         format: uuid
+ *                       nickname:
+ *                         type: string
+ *       401:
+ *         description: Não autorizado
+ */
+router.get("/mygroups", GroupController.getMyGroups);
+
+/**
+ * @swagger
+ * /groups/public:
+ *   get:
+ *     summary: Lista grupos públicos
+ *     description: Retorna todos os grupos públicos
+ *     tags: [Grupos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de grupos públicos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     format: uuid
+ *                   name:
+ *                     type: string
+ *                   isPublic:
+ *                     type: boolean
+ *                   memberCount:
+ *                     type: integer
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                   createdBy:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         format: uuid
+ *                       nickname:
+ *                         type: string
+ *       401:
+ *         description: Não autorizado
+ */
+router.get("/public", GroupController.getPublicGroups);
+
+/**
+ * @swagger
+ * /groups/private:
+ *   get:
+ *     summary: Lista grupos privados
+ *     description: Retorna todos os grupos privados
+ *     tags: [Grupos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de grupos privados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     format: uuid
+ *                   name:
+ *                     type: string
+ *                   isPublic:
+ *                     type: boolean
+ *                   memberCount:
+ *                     type: integer
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *                   createdBy:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         format: uuid
+ *                       nickname:
+ *                         type: string
+ *       401:
+ *         description: Não autorizado
+ */
+router.get("/private", GroupController.getPrivateGroups);
+
+/**
+ * @swagger
+ * /groups/{groupId}/details:
+ *   get:
+ *     summary: Detalhes de um grupo
+ *     description: Retorna informações detalhadas de um grupo específico
+ *     tags: [Grupos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: groupId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         required: true
+ *         description: ID do grupo
+ *     responses:
+ *       200:
+ *         description: Detalhes do grupo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   format: uuid
+ *                 name:
+ *                   type: string
+ *                 isPublic:
+ *                   type: boolean
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                 createdBy:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       format: uuid
+ *                     nickname:
+ *                       type: string
+ *                 memberCount:
+ *                   type: integer
+ *                 members:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                         format: uuid
+ *                       nickname:
+ *                         type: string
+ *                 ranking:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       user:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             format: uuid
+ *                           nickname:
+ *                             type: string
+ *                       points:
+ *                         type: integer
+ *                       position:
+ *                         type: integer
+ *                       correctPredictions:
+ *                         type: integer
+ *                       exactHits:
+ *                         type: integer
+ *                       totalGuesses:
+ *                         type: integer
+ *                 recentPredictions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       matchId:
+ *                         type: string
+ *                       homeTeam:
+ *                         type: string
+ *                       awayTeam:
+ *                         type: string
+ *                       userPrediction:
+ *                         type: array
+ *                         items:
+ *                           type: number
+ *                       actualResult:
+ *                         type: array
+ *                         items:
+ *                           type: number
+ *                       pointsEarned:
+ *                         type: integer
+ *       404:
+ *         description: Grupo não encontrado
+ *       401:
+ *         description: Não autorizado
+ */
+router.get(
+  "/:groupId/details",
+  validateSchema(idSchema, "params"),
+  GroupController.getGroupDetails
+);
 
 /**
  * @swagger
  * /groups:
  *   post:
  *     summary: Cria um novo grupo
- *     description: Cria um novo grupo de apostas com o usuário autenticado como criador
+ *     description: Cria um novo grupo e adiciona o criador como membro
  *     tags: [Grupos]
  *     security:
  *       - bearerAuth: []
@@ -60,54 +315,56 @@ export default router;
  *             type: object
  *             required:
  *               - name
+ *               - isPublic
  *             properties:
  *               name:
  *                 type: string
- *                 example: "Meu Grupo"
+ *                 minLength: 3
+ *                 maxLength: 50
  *               isPublic:
  *                 type: boolean
- *                 example: true
+ *               password:
+ *                 type: string
+ *                 minLength: 4
+ *                 description: Obrigatório se isPublic for false
  *     responses:
  *       201:
  *         description: Grupo criado com sucesso
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Group'
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   format: uuid
+ *                 name:
+ *                   type: string
+ *                 isPublic:
+ *                   type: boolean
+ *                 createdBy:
+ *                   type: string
+ *                   format: uuid
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
  *       400:
- *         description: Dados inválidos ou faltando
+ *         description: Dados inválidos
  *       401:
  *         description: Não autorizado
  */
+router.post(
+  "/",
+  validateSchema(createGroupSchema),
+  GroupController.createGroup
+);
 
 /**
  * @swagger
- * /groups:
- *   get:
- *     summary: Lista todos os grupos
- *     description: Retorna uma lista de grupos públicos ou privados que o usuário pertence
- *     tags: [Grupos]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Lista de grupos retornada com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Group'
- *       401:
- *         description: Não autorizado
- */
-
-/**
- * @swagger
- * /groups/join/{groupId}:
+ * /groups/{groupId}/join:
  *   post:
- *     summary: Entra em um grupo
- *     description: Permite que o usuário autenticado entre em um grupo público ou privado
+ *     summary: Entrar em um grupo
+ *     description: Adiciona o usuário logado como membro de um grupo
  *     tags: [Grupos]
  *     security:
  *       - bearerAuth: []
@@ -118,24 +375,40 @@ export default router;
  *           type: string
  *           format: uuid
  *         required: true
- *         example: "a1557981-fb2b-4e19-b0ac-b471ef1efa52"
+ *         description: ID do grupo
  *     responses:
  *       200:
  *         description: Entrou no grupo com sucesso
- *       400:
- *         description: ID inválido ou senha incorreta
- *       401:
- *         description: Não autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 userId:
+ *                   type: string
+ *                   format: uuid
+ *                 groupId:
+ *                   type: string
+ *                   format: uuid
  *       404:
  *         description: Grupo não encontrado
+ *       401:
+ *         description: Não autorizado
+ *       409:
+ *         description: Usuário já é membro do grupo
  */
+router.post(
+  "/:groupId/join",
+  validateSchema(idSchema, "params"),
+  GroupController.joinGroup
+);
 
 /**
  * @swagger
- * /groups/leave/{groupId}:
+ * /groups/{groupId}/leave:
  *   post:
- *     summary: Sai de um grupo
- *     description: Permite que o usuário autenticado saia de um grupo
+ *     summary: Sair de um grupo
+ *     description: Remove o usuário logado de um grupo
  *     tags: [Grupos]
  *     security:
  *       - bearerAuth: []
@@ -146,24 +419,38 @@ export default router;
  *           type: string
  *           format: uuid
  *         required: true
- *         example: "a1557981-fb2b-4e19-b0ac-b471ef1efa52"
+ *         description: ID do grupo
  *     responses:
  *       200:
  *         description: Saiu do grupo com sucesso
- *       400:
- *         description: ID inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 userId:
+ *                   type: string
+ *                   format: uuid
+ *                 groupId:
+ *                   type: string
+ *                   format: uuid
+ *       404:
+ *         description: Grupo não encontrado ou usuário não é membro
  *       401:
  *         description: Não autorizado
- *       404:
- *         description: Grupo não encontrado
  */
+router.post(
+  "/:groupId/leave",
+  validateSchema(idSchema, "params"),
+  GroupController.leaveGroup
+);
 
 /**
  * @swagger
  * /groups/{groupId}:
  *   delete:
- *     summary: Exclui um grupo
- *     description: Permite que o criador do grupo exclua o mesmo
+ *     summary: Excluir um grupo
+ *     description: Exclui um grupo (apenas o criador pode excluir)
  *     tags: [Grupos]
  *     security:
  *       - bearerAuth: []
@@ -174,44 +461,31 @@ export default router;
  *           type: string
  *           format: uuid
  *         required: true
- *         example: "a1557981-fb2b-4e19-b0ac-b471ef1efa52"
+ *         description: ID do grupo
  *     responses:
- *       204:
+ *       200:
  *         description: Grupo excluído com sucesso
- *       400:
- *         description: ID inválido
- *       401:
- *         description: Não autorizado (apenas o criador pode excluir)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   format: uuid
+ *                 name:
+ *                   type: string
+ *       403:
+ *         description: Apenas o criador pode excluir o grupo
  *       404:
  *         description: Grupo não encontrado
+ *       401:
+ *         description: Não autorizado
  */
+router.delete(
+  "/:groupId",
+  validateSchema(idSchema, "params"),
+  GroupController.deleteGroup
+);
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     Group:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *           format: uuid
- *           example: "a1557981-fb2b-4e19-b0ac-b471ef1efa52"
- *         name:
- *           type: string
- *           example: "Grupo dos Campeões"
- *         isPublic:
- *           type: boolean
- *           example: true
- *         creator:
- *           type: string
- *           format: uuid
- *           example: "a1557981-fb2b-4e19-b0ac-b471ef1efa52"
- *         createdAt:
- *           type: string
- *           format: date-time
- *           example: "2023-05-01T10:00:00Z"
- *         membersCount:
- *           type: integer
- *           example: 5
- */
+export default router;
