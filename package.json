@@ -6,7 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "node --watch .",
-    "start": "node server.js"
+    "start": "node server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "build": "npm install && npm run prisma:generate && npm run prisma:migrate"
   },
   "repository": {
     "type": "git",
